@@ -1,29 +1,34 @@
 Generate a 3D model using Comfy Cloud based on the user's description: $ARGUMENTS
 
-Follow these steps exactly:
+Approach: prefer a ready-made template over hand-building, and discover the current options with the tools rather than assuming a fixed catalog. Model, node, and template availability changes over time, so let the tools tell you what exists right now.
 
-**Step 0 — Route partner-API requests directly.** If the user named a provider, model, or capability (e.g. "Meshy", "Tripo", "Rodin", "Tencent 3D"), do one `search_nodes` lookup with the named term. If the matching node's category starts with `api node/`, try `partner_generate` first — see its tool description for the currently-wired model ids. Pass `type: "3d"` plus the partner's model slug, `prompt`, and any optional fields (`seed`/`medias[]`). On success, return the artifact URL(s) and **stop** — do NOT continue with the workflow steps below. If `partner_generate` returns "unknown model" or "not yet implemented", or the matching node has no `api node/` prefix (OSS model), continue to Step 1.
+**Step 0 - Partner-API shortcut.** If the user named a provider or capability (Meshy, Tripo, Rodin, Tencent, and so on), find the matching node with `search_nodes` filtered by `category: "api node/3d"` (optionally add a `q` for the provider name). If a matching `api node/3d/...` node exists, try `partner_generate` first with `type: "3d"` and that provider's model slug, plus `prompt` and any optional fields (`seed`, `medias[]`). On success, return the artifact URL(s) and stop. If it returns "unknown model" or "not yet implemented", continue below.
 
-1. Use `search_templates` with queries like "3D generation", "image to 3D", "text to 3D", or "mesh generation" to find a pre-built 3D workflow template. If a good template exists, use it as the base workflow instead of building from scratch.
+1. **Look for a template first.** Call `search_templates` with `tag: "Image to 3D"` (image-to-3D is the common case), and/or `q: "3d"` for the broader set. If a suitable template comes back, clone it as your base workflow: swap in the user's input (such as the reference image) and adjust settings instead of building from scratch. Cloning a template is almost always faster than hand-wiring nodes, so spend real effort here before falling through to step 2.
 
-2. If no suitable template was found, use `search_nodes` to find 3D-related nodes. Search for "3D", "mesh", or "Hunyuan3D" to discover available 3D generation nodes. Use `search_models` to find 3D models (e.g. Hunyuan3D, TripoSR, InstantMesh).
+2. **If no template fits, discover nodes structurally - do not free-text guess.** Use `search_nodes` with its typed filters, which match against the live catalog:
+   - `output_type: "FILE_3D_GLB"` (also `MESH`, `FILE_3D_OBJ`) to find nodes that produce a 3D file.
+   - `category: "3d"` or `category: "api node/3d"` to browse the 3D nodes.
+   - `input_type: "IMAGE"` to find what accepts an image, for image-to-3D.
 
-3. If the user provides a reference image (for image-to-3D), use `upload_file` to upload it first. Many 3D generation workflows take an image as input to create a 3D model from it.
+   Use `search_models` for any checkpoints the chosen nodes require. Do not paste in remembered model or node names - query for them, because the set changes.
 
-4. Build a ComfyUI API-format workflow JSON with the appropriate 3D nodes. 3D workflows typically involve specialized loader nodes, 3D generation/reconstruction nodes, and 3D output nodes. If using a template, modify the prompt and settings as needed.
+3. If the user provides a reference image (image-to-3D), `upload_file` it first.
 
-5. **Validate the workflow has inputs and outputs before submitting.** Confirm the JSON contains:
-   - At least one **input node** carrying the user's intent (text prompt node, LoadImage for image-to-3D, etc.).
-   - At least one **output/save node** wired to the final mesh/output (e.g. `SaveGLB`, `Hunyuan3DSaveMesh`, `SaveImage` for preview renders, or the partner node's own save output).
+4. Build a ComfyUI API-format workflow JSON, or edit the cloned template. A 3D workflow generally chains an input, a 3D generation or reconstruction node, and a 3D save/output node.
 
-   API-backed partner nodes often produce an output tensor but **do not include a save node by default** — you must add one and wire it to their output. Without it the job runs successfully but produces nothing retrievable, wasting compute. Do not skip this check.
+5. **Validate inputs and outputs before submitting.** Confirm the workflow has:
+   - at least one input node carrying the user's intent (a text prompt node, or LoadImage for image-to-3D), and
+   - at least one save/output node wired to the final mesh. If you are unsure of the exact node, find it with `search_nodes output_type: "FILE_3D_GLB"`.
 
-6. Call `submit_workflow` with the workflow JSON. Note: 3D generation can take longer than image generation.
+   API and partner nodes often produce an output but include no save node by default. Add and wire one, or the job runs and produces nothing retrievable, wasting compute. Do not skip this check.
 
-7. Poll `get_job_status` every 5 seconds until the job is completed. Show the user a brief status update while waiting. If the user asks to cancel, use `cancel_job` with the prompt_id.
+6. Call `submit_workflow`. 3D generation can take longer than image generation.
 
-8. Call `get_output` to retrieve the generated 3D output. Pass a short `description` parameter (e.g. "red sports car 3d model") so the saved file gets a descriptive name.
+7. Poll `get_job_status` every 5 seconds until completed, showing brief status updates while waiting. If the user asks to cancel, use `cancel_job` with the prompt_id.
 
-9. Tell the user where the 3D output files were saved. 3D outputs may include mesh files (.obj, .glb), textures, or rendered preview images.
+8. Call `get_output` to retrieve the result. Pass a short `description` (for example "red sports car 3d model") so the saved file gets a descriptive name.
 
-If any step fails, show the error clearly. 3D generation support in ComfyUI is actively evolving — fewer templates and models may be available compared to image generation.
+9. Tell the user where the files were saved. 3D outputs may include mesh files (.obj, .glb), textures, or rendered preview images.
+
+If a step fails, show the error clearly and use the search tools to find a current alternative rather than assuming none exists.
