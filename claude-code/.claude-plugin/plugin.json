@@ -1,0 +1,16 @@
+{
+  "name": "comfy-cloud",
+  "description": "Comfy Cloud for Claude Code — generate images, video, audio, and 3D, search models, nodes, and templates, and run ComfyUI workflows. Bundles the hosted Comfy Cloud MCP connection plus slash commands.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Comfy Org",
+    "url": "https://comfy.org"
+  },
+  "homepage": "https://docs.comfy.org/cloud/mcp",
+  "mcpServers": {
+    "comfy-cloud": {
+      "type": "http",
+      "url": "https://cloud.comfy.org/mcp"
+    }
+  }
+}
