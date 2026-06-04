@@ -1,0 +1,16 @@
+{
+  "name": "comfy-skills",
+  "description": "Comfy skills and plugins for AI coding agents. Includes comfy-cloud, the Comfy Cloud MCP connection plus slash commands for Claude Code.",
+  "owner": {
+    "name": "Comfy Org",
+    "url": "https://comfy.org"
+  },
+  "plugins": [
+    {
+      "name": "comfy-cloud",
+      "source": "./claude-code",
+      "description": "Comfy Cloud in Claude Code: the hosted MCP connection plus slash commands for generating images, video, audio, and 3D and searching the catalog.",
+      "homepage": "https://docs.comfy.org/cloud/mcp"
+    }
+  ]
+}
