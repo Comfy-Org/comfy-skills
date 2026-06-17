@@ -1,0 +1,9 @@
+{
+  "name": "comfy-general",
+  "description": "General-purpose personal automation slash commands for Claude Code (action-item digests from Slack and Notion, etc.).",
+  "version": "0.1.0",
+  "author": {
+    "name": "Comfy Org",
+    "url": "https://comfy.org"
+  }
+}
