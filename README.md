@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.svg" alt="Comfy Skills" width="200"/>
+<img src="assets/logo.png" alt="Comfy Skills" width="280" height="280"/>
 
 <h1>Comfy Skills</h1>
 
