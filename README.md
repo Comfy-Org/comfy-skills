@@ -8,8 +8,6 @@
 
 Home of **Comfy Cloud skills and plugins for AI coding agents** — the slash commands and MCP connection that let an agent generate images, video, audio, and 3D, search models and nodes, and run ComfyUI workflows through [Comfy Cloud](https://cloud.comfy.org).
 
-For internal Comfy engineering conventions, see [comfy-conventions](https://github.com/Comfy-Org/comfy-conventions) instead.
-
 ## Install (Claude Code)
 
 The **`comfy-cloud`** plugin bundles the Comfy Cloud MCP connection **and** the slash commands in one step:
