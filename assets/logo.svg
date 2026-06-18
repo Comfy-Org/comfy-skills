@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="280" height="180" viewBox="0 0 280 180">
+  <rect width="280" height="180" rx="10" fill="#1a2cce"/>
+  <!-- Leaning C: spans x=58 to x=223, width=165, centered in 280 -->
+  <!-- Top bar -->
+  <rect x="123" y="20" width="100" height="16" rx="2" fill="#f0ff53"/>
+  <!-- Upper curve -->
+  <rect x="98" y="42" width="100" height="16" rx="2" fill="#f0ff53"/>
+  <!-- Upper middle -->
+  <rect x="78" y="64" width="55" height="16" rx="2" fill="#f0ff53"/>
+  <!-- Lower middle -->
+  <rect x="58" y="86" width="55" height="16" rx="2" fill="#f0ff53"/>
+  <!-- Lower body -->
+  <rect x="63" y="108" width="55" height="16" rx="2" fill="#f0ff53"/>
+  <!-- Lower curve -->
+  <rect x="73" y="130" width="100" height="16" rx="2" fill="#f0ff53"/>
+  <!-- Bottom bar -->
+  <rect x="83" y="152" width="100" height="16" rx="2" fill="#f0ff53"/>
+</svg>
