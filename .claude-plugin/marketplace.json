@@ -11,11 +11,6 @@
       "source": "./claude-code",
       "description": "Comfy Cloud in Claude Code: the hosted MCP connection plus slash commands for generating images, video, audio, and 3D and searching the catalog.",
       "homepage": "https://docs.comfy.org/cloud/mcp"
-    },
-    {
-      "name": "comfy-general",
-      "source": "./comfy-general",
-      "description": "General-purpose personal automation slash commands for Claude Code (action-item digests from Slack and Notion, etc.)."
     }
   ]
 }
