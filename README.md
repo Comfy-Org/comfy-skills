@@ -1,8 +1,14 @@
-# Comfy Skills
+<div align="center">
+
+<img src="assets/logo.svg" alt="Comfy Skills" width="200"/>
+
+<h1>Comfy Skills</h1>
+
+</div>
 
 Home of **Comfy Cloud skills and plugins for AI coding agents** — the slash commands and MCP connection that let an agent generate images, video, audio, and 3D, search models and nodes, and run ComfyUI workflows through [Comfy Cloud](https://cloud.comfy.org).
 
-For internal Comfy engineering conventions, see [comfy-conventions](https://github.com/Comfy-Org/comfy-conventions) instead.
+> **Contributions welcome.** We'd love your help strengthening these skills — submissions and pull requests are open, and we look forward to building this out with the community.
 
 ## Install (Claude Code)
 
