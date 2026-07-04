@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/comfy-org-comfy-skills-badge.png)](https://mseep.ai/app/comfy-org-comfy-skills)
+
 <div align="center">
 
 <img src="assets/logo.png" alt="Comfy Skills" width="280" height="280"/>
