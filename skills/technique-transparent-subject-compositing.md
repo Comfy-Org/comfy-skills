@@ -2,6 +2,13 @@ Composite a semi-transparent subject into a scene so the background shows throug
 
 Use this when the user wants a ghostly, holographic, or partially see-through character in a scene — typically as the reference or first frame for a video model such as Seedance. Prompting alone will not get you there; the transparency has to be a compositing step you control, not a phrase in the prompt.
 
+Before building this by hand, run `search_templates` — a ready-made template you can clone beats hand-wiring, and the catalog moves.
+
+Check first that you need this recipe rather than a simpler one, because "transparent" covers two different asks:
+
+- **A subject on a transparent background** (an alpha cutout, no scene) — that is native RGBA generation, not compositing. Use the Layer Diffuse family (`LayeredDiffusionApply` into `LayeredDiffusionDecodeRGBA`), or segment an existing image and keep the alpha. Do not use this recipe.
+- **A subject that is itself see-through, with a scene visible through it** — that is this recipe. The scene behind the subject has to be reconstructed before anything can show through, which is what Steps 2-4 do.
+
 Follow these steps exactly.
 
 ## Step 1: Generate the subject and the background together in one image
@@ -12,7 +19,7 @@ Use whichever image node the user's request points at, e.g. `GeminiNanoBanana2V2
 
 Prompt for a fully opaque, normally-lit character. Transparency is applied in Step 4; asking for it here just makes the model guess.
 
-Keep this image. It is used three more times: as the segmentation input, as the IPAdapter reference, and as the composite source.
+Keep this image. It is used three more times: as the segmentation input, as the IPAdapter reference, and as the composite source. Steps 1-4 can be one workflow; if you split them across submissions, re-upload the generated image with `upload_file` first — on Comfy Cloud the `SaveImage` output directory is not the `LoadImage` input directory.
 
 ## Step 2: Segment the subject out of that image
 
@@ -125,7 +132,7 @@ Scale the mask to set opacity, then composite:
 }
 ```
 
-`ImageCompositeMasked` blends per pixel by mask value, so a mask multiplied down to `0.45` gives a 45% character over a 100% background — the background genuinely shows through, and `value` is a dial the user can move without regenerating anything. `SolidMask`'s `width`/`height` must match the image; run `FeatherMask` on the tight mask first if the edge reads as cut out.
+`ImageCompositeMasked` blends per pixel by mask value, so a mask multiplied down to `0.45` gives a 45% character over a 100% background — the background genuinely shows through, and `value` is a dial the user can move without regenerating anything. Size `SolidMask` to the image: `MaskComposite` multiplies only where the two masks overlap and does not resize, so a short `SolidMask` silently leaves the rest of the character at full opacity. Run `FeatherMask` on the tight mask first if the edge reads as cut out.
 
 If a downstream step needs the character as a standalone RGBA layer instead of a flattened frame, use `JoinImageWithAlpha` (`image` = original image, `alpha` = faded mask).
 
