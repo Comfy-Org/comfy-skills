@@ -8,31 +8,31 @@ If the user provides a photo of themselves, use `upload_file` to upload it. Note
 
 ## Step 2: Generate a reference image of the other person
 
-Use `KlingOmniProImageNode` (model: `kling-v3-omni`) or `GeminiNanoBanana2` to generate a high-quality reference portrait of the target person. Use a detailed prompt describing their iconic appearance. Save and upload the result for use as a second reference.
+Use `KlingOmniProImageNode` (model: `kling-v3-omni`) or `GeminiNanoBanana2V2` to generate a high-quality reference portrait of the target person. Use a detailed prompt describing their iconic appearance. Save and upload the result for use as a second reference.
+
+`GeminiNanoBanana2V2` is the current class name — the older `GeminiNanoBanana2` is marked deprecated in the node catalog and is hidden from `search_nodes`.
 
 Alternatively, if the user provides their own reference image of the second person, upload that instead and skip generation.
 
-## Step 3: Batch the reference images
+## Step 3: Wire both references into the composite node
 
-Use `ImageBatch` to combine both images into a single batch:
+`GeminiNanoBanana2V2` takes up to 14 reference images directly, as auto-grow slots named `model.images.image_1` through `model.images.image_14`, so no separate batching node is needed — connect the user's photo to `model.images.image_1` and the other person to `model.images.image_2`.
 
-```json
-{
-  "class_type": "ImageBatch",
-  "inputs": { "image1": ["user_photo_node", 0], "image2": ["other_person_node", 0] }
-}
-```
+If you do need a standalone image batch elsewhere in the graph, the current class is `BatchImagesNode` (display name "Batch Images"); the older `ImageBatch` is marked deprecated. Its `images` input is an auto-grow list, so call `get_node({ names: ["BatchImagesNode"] })` for the exact slot names before wiring it.
 
 ## Step 4: Generate the composite with Nano Banana 2
 
-Use `GeminiNanoBanana2` with these settings for best results:
+`GeminiNanoBanana2V2`'s `model` input is a dynamic combo, so the settings it gates are sent under their full dotted names, not flat. Call `get_node({ names: ["GeminiNanoBanana2V2"] })` for the exact input names before you build the graph.
+
+Settings that matter for this recipe:
 
 - **model**: `Nano Banana 2 (Gemini 3.1 Flash Image)`
-- **thinking_level**: `HIGH` (critical for face accuracy)
-- **resolution**: `2K`
-- **aspect_ratio**: `16:9` (or match user preference)
-- **response_modalities**: `IMAGE`
-- **images**: connect to the ImageBatch output
+- **model.thinking_level**: `HIGH` (critical for face accuracy)
+- **model.resolution**: `2K`
+- **model.aspect_ratio**: `16:9` (or match user preference)
+- **model.images.image_1** / **model.images.image_2**: the two references from Step 3
+- **response_modalities**: `IMAGE` (top level, not gated by `model`)
+- **seed**: top level; vary it for Step 5
 
 ### Prompt structure (important):
 
