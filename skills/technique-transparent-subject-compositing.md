@@ -90,7 +90,7 @@ Wire it as: checkpoint → IPAdapter → inpaint conditioning → sampler → de
 }
 ```
 
-Then run `KSampler` with `model` from the `IPAdapterAdvanced` output (not the raw checkpoint — that is what applies the IPAdapter conditioning) and `positive` / `negative` / `latent_image` from `inpaint_cond`'s three outputs, and decode with `VAEDecode`. `VAEEncodeForInpaint` is the alternative latent path if the checkpoint is not an inpainting model; it takes its own `grow_mask_by`, so you can skip the separate `GrowMask` on that branch.
+Then run `KSampler` with `model` from the `IPAdapterAdvanced` output (not the raw checkpoint — that is what applies the IPAdapter conditioning) and `positive` / `negative` / `latent_image` from `inpaint_cond`'s three outputs, and decode with `VAEDecode`. `VAEEncodeForInpaint` is the alternative latent path if the checkpoint is not an inpainting model; it takes its own `grow_mask_by`, which covers the growing **for the latent only**. Keep the standalone `GrowMask` even on that branch: `VAEEncodeForInpaint` returns just a `LATENT` — the grown mask lives inside it as a `noise_mask` and is never exposed as a `MASK` output — so `IPAdapterAdvanced`'s `attn_mask` has nothing to wire to without it, and an unset `attn_mask` lets the IPAdapter condition the whole frame instead of just the hole.
 
 Two things to resolve at run time rather than assume: `IPAdapterUnifiedLoader` needs IPAdapter and CLIP-vision weights compatible with the checkpoint (use `search_models`, or wire `IPAdapterModelLoader` + `CLIPVisionLoader` explicitly via `IPAdapterAdvanced`'s `clip_vision` input), and the enum values above (`preset`, `weight_type`, `embeds_scaling`) should be confirmed with `get_node` before submitting.
 
@@ -154,7 +154,7 @@ Scale the mask to set opacity, then composite:
 }
 ```
 
-`ImageCompositeMasked` blends per pixel by mask value, so a mask multiplied down to `0.45` gives a 45% character over a 100% background — the background genuinely shows through, and `value` is a dial the user can move without regenerating anything. Size `SolidMask` to the image: `MaskComposite` multiplies only where the two masks overlap and does not resize, so a short `SolidMask` silently leaves the rest of the character at full opacity. Run `FeatherMask` on the tight mask first if the edge reads as cut out.
+`ImageCompositeMasked` blends per pixel by mask value, so a mask multiplied down to `0.45` gives a 45% character over a 100% background — the background genuinely shows through, and `value` is a dial the user can move without regenerating anything. Size `SolidMask` to the image — the `1280x720` above is a placeholder, so set `width` / `height` to the actual dimensions of the Step 1 image. `MaskComposite` multiplies only where the two masks overlap and does not resize, so a `SolidMask` smaller than the image silently leaves the rest of the character at full opacity. Run `FeatherMask` on the tight mask first if the edge reads as cut out.
 
 If a downstream step needs the character as a standalone RGBA layer instead of a flattened frame, use `JoinImageWithAlpha` — but **invert the faded mask first**:
 
@@ -177,7 +177,7 @@ If a downstream step needs the character as a standalone RGBA layer instead of a
 
 The composited frame is a normal image, so it feeds any image-conditioned video node — for the Seedance case, `ByteDance2ReferenceNode` (reference-to-video) or `ByteDance2FirstLastFrameNode` (first-frame). These gate their inputs behind a dynamic `model` combo, so call `get_node` for the exact slot names before wiring, and confirm the current class with `search_nodes` (`category: "partner/video"`).
 
-Save the background plate and the tight mask alongside the composite. Regenerating a different opacity, or re-cutting the composite for another shot, is then a Step 4 re-run rather than a full rebuild.
+Save the background plate, the tight mask, **and the original Step 1 image** alongside the composite. Step 4 consumes all three — the original is the composite *source*, not just the segmentation input — so dropping it means a full rebuild rather than a re-run. With all three kept, regenerating a different opacity or re-cutting the composite for another shot is a Step 4 re-run.
 
 ## Key learnings:
 
