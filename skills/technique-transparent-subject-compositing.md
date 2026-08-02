@@ -25,15 +25,17 @@ Keep this image. It is used three more times: as the segmentation input, as the 
 
 Produce a `MASK` covering the character. Pick the node that fits how the character has to be identified:
 
-| Node | What it needs | Good for |
-| --- | --- | --- |
-| `SAM3Segment` | a text `prompt` (e.g. "the woman in the red coat") | Naming one subject in a scene that contains several |
-| `BiRefNetRMBG` | just `image` plus a `model` choice | Clean single-subject cutouts; `BiRefNet-matting` for hair and soft edges |
-| `LayerMask: BiRefNetUltraV2` (+ `LayerMask: LoadBiRefNetModelV2`) | a loaded `BIREFNET_MODEL` | The same family with explicit `detail_erode` / `detail_dilate` / black-and-white-point controls |
-| `SAM3Segmentation` (+ `LoadSAM3Model`) | point or box prompts | Precise manual control when a text prompt picks the wrong thing |
-| `RemoveBackground` (+ `LoadBackgroundRemovalModel`) | a loaded `BACKGROUND_REMOVAL` model | Core-node path, mask output only |
+| Node | What it needs | `MASK` slot | Good for |
+| --- | --- | --- | --- |
+| `SAM3Segment` | a text `prompt` (e.g. "the woman in the red coat") | 1 | Naming one subject in a scene that contains several |
+| `BiRefNetRMBG` | just `image` plus a `model` choice | 1 | Clean single-subject cutouts; `BiRefNet-matting` for hair and soft edges |
+| `LayerMask: BiRefNetUltraV2` (+ `LayerMask: LoadBiRefNetModelV2`) | a loaded `BIREFNET_MODEL` | 1 | The same family with explicit `detail_erode` / `detail_dilate` / black-and-white-point controls |
+| `SAM3Segmentation` (+ `LoadSAM3Model`) | point or box prompts | 0 | Precise manual control when a text prompt picks the wrong thing |
+| `RemoveBackground` (+ `LoadBackgroundRemovalModel`) | a loaded `BACKGROUND_REMOVAL` model | 0 | Core-node path, mask output only |
 
 `SAM3Segment` and `BiRefNetRMBG` are single self-contained nodes (no separate loader), so they are the cheapest place to start.
+
+**The `MASK` output is not always slot 0.** `SAM3Segment` and `BiRefNetRMBG` both return `[IMAGE, MASK, MASK_IMAGE]`, so their mask is slot **1** — wiring `[node, 0]` hands an `IMAGE` to a `MASK` input and fails validation before the workflow runs. The column above is a starting point, not a guarantee; confirm the slot with `get_node` for whichever node you land on.
 
 Keep **two** versions of this mask:
 
@@ -43,7 +45,7 @@ Keep **two** versions of this mask:
 ```json
 {
   "class_type": "GrowMask",
-  "inputs": { "mask": ["segmentation_node", 0], "expand": 12, "tapered_corners": true }
+  "inputs": { "mask": ["segmentation_node", 1], "expand": 12, "tapered_corners": true }
 }
 ```
 
@@ -96,6 +98,26 @@ Prompt the inpaint for the background only — describe what should be behind th
 
 The output of this step is the reconstructed **background plate**: the same scene, no character, lighting and perspective intact.
 
+One refinement worth making: `noise_mask: true` confines the *denoising* to the hole, but `VAEDecode` still round-trips every pixel through the VAE, so the untouched scene comes back very slightly softened. Paste the fill back over the original to get a pristine plate:
+
+```json
+{
+  "clean_plate": {
+    "class_type": "ImageCompositeMasked",
+    "inputs": {
+      "destination": ["original_image", 0],
+      "source": ["vae_decode", 0],
+      "x": 0,
+      "y": 0,
+      "resize_source": false,
+      "mask": ["grow_mask", 0]
+    }
+  }
+}
+```
+
+This keeps the inpainted pixels inside the grown mask and the original pixels everywhere else.
+
 ## Step 4: Recomposite the subject at a controllable opacity
 
 You now hold two aligned layers at the same resolution: the original image (character in place) and the background plate. Because the character was never moved, compositing needs no alignment work — the tight mask from Step 2 puts it back exactly where it was.
@@ -111,7 +133,7 @@ Scale the mask to set opacity, then composite:
   "faded_mask": {
     "class_type": "MaskComposite",
     "inputs": {
-      "destination": ["tight_mask", 0],
+      "destination": ["segmentation_node", 1],
       "source": ["opacity", 0],
       "x": 0,
       "y": 0,
@@ -134,7 +156,22 @@ Scale the mask to set opacity, then composite:
 
 `ImageCompositeMasked` blends per pixel by mask value, so a mask multiplied down to `0.45` gives a 45% character over a 100% background — the background genuinely shows through, and `value` is a dial the user can move without regenerating anything. Size `SolidMask` to the image: `MaskComposite` multiplies only where the two masks overlap and does not resize, so a short `SolidMask` silently leaves the rest of the character at full opacity. Run `FeatherMask` on the tight mask first if the edge reads as cut out.
 
-If a downstream step needs the character as a standalone RGBA layer instead of a flattened frame, use `JoinImageWithAlpha` (`image` = original image, `alpha` = faded mask).
+If a downstream step needs the character as a standalone RGBA layer instead of a flattened frame, use `JoinImageWithAlpha` — but **invert the faded mask first**:
+
+```json
+{
+  "alpha_mask": {
+    "class_type": "InvertMask",
+    "inputs": { "mask": ["faded_mask", 0] }
+  },
+  "rgba_layer": {
+    "class_type": "JoinImageWithAlpha",
+    "inputs": { "image": ["original_image", 0], "alpha": ["alpha_mask", 0] }
+  }
+}
+```
+
+`JoinImageWithAlpha` computes `alpha = 1.0 - mask` internally, because ComfyUI's `MASK` convention is the inverse of alpha. Passing the faded mask straight in therefore produces the opposite of what you want — a fully opaque background (α = 1.0) with the character at α = 0.55. The `InvertMask` cancels that out, giving the character α = 0.45 and everything else α = 0. Note that this is the one place in the recipe where the mask has to be flipped: `ImageCompositeMasked` above takes the mask the right way round.
 
 ## Step 5: Hand the composite to the video model
 
