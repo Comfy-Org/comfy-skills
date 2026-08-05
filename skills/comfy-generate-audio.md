@@ -12,7 +12,9 @@ Follow these steps exactly:
 
 4. **Validate the workflow has inputs and outputs before submitting.** Confirm the JSON contains:
    - At least one **input node** carrying the user's intent (text prompt node, LoadAudio for audio-to-audio, etc.).
-   - At least one **output/save node** wired to the final audio tensor (`SaveAudio` or the partner node's own save output).
+   - At least one **output/save node** wired to the final audio tensor (`SaveAudioAdvanced` or the partner node's own save output).
+
+   `SaveAudioAdvanced` (display name "Save Audio (Advanced)") is the current save node, and it requires `format` alongside `audio` and `filename_prefix` — the older `SaveAudio`, `SaveAudioMP3`, and `SaveAudioOpus` classes are marked deprecated in the node catalog and are hidden from `search_nodes`.
 
    API-backed partner nodes often produce an audio tensor but **do not include a save node by default** — you must add one and wire it to their output. Without it the job runs successfully but produces nothing retrievable, wasting compute. Do not skip this check.
 
