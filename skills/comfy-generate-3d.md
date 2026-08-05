@@ -2,13 +2,13 @@ Generate a 3D model using Comfy Cloud based on the user's description: $ARGUMENT
 
 Approach: prefer a ready-made template over hand-building, and discover the current options with the tools rather than assuming a fixed catalog. Model, node, and template availability changes over time, so let the tools tell you what exists right now.
 
-**Step 0 - Partner-API shortcut.** If the user named a provider or capability (Meshy, Tripo, Rodin, Tencent, and so on), find the matching node with `search_nodes` filtered by `category: "api node/3d"` (optionally add a `q` for the provider name). If a matching `api node/3d/...` node exists, try `partner_generate` first with `type: "3d"` and that provider's model slug, plus `prompt` and any optional fields (`seed`, `medias[]`). On success, return the artifact URL(s) and stop. If it returns "unknown model" or "not yet implemented", continue below.
+**Step 0 - Partner-API shortcut.** If the user named a provider or capability (Meshy, Tripo, Rodin, Tencent, and so on), find the matching node with `search_nodes` filtered by `category: "partner/3d"` (optionally add a `q` for the provider name). If a matching `partner/3d/...` node exists, try `partner_generate` first with `type: "3d"` and that provider's model slug, plus `prompt` and any optional fields (`seed`, `medias[]`). On success, return the artifact URL(s) and stop. If it returns "unknown model" or "not yet implemented", or says it "does not serve type" (3D has no `partner_generate` persist path today), continue below — the template path in step 1 does generate 3D on Comfy Cloud.
 
 1. **Look for a template first.** Call `search_templates` with `tag: "Image to 3D"` (image-to-3D is the common case), and/or `q: "3d"` for the broader set. If a suitable template comes back, clone it as your base workflow: swap in the user's input (such as the reference image) and adjust settings instead of building from scratch. Cloning a template is almost always faster than hand-wiring nodes, so spend real effort here before falling through to step 2.
 
 2. **If no template fits, discover nodes structurally - do not free-text guess.** Use `search_nodes` with its typed filters, which match against the live catalog:
    - `output_type: "FILE_3D_GLB"` (also `MESH`, `FILE_3D_OBJ`) to find nodes that produce a 3D file.
-   - `category: "3d"` or `category: "api node/3d"` to browse the 3D nodes.
+   - `category: "3d"` or `category: "partner/3d"` to browse the 3D nodes.
    - `input_type: "IMAGE"` to find what accepts an image, for image-to-3D.
 
    Use `search_models` for any checkpoints the chosen nodes require. Do not paste in remembered model or node names - query for them, because the set changes.
