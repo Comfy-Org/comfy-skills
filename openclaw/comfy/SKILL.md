@@ -67,7 +67,15 @@ Comfy Cloud credits and needs a subscription or credit balance.
 ## Which tools to use
 
 **Images and video from a named model** (Ideogram, Flux, Gemini, Kling, Veo,
-Seedance, …): call `partner_generate` — it runs the provider through Comfy
+Seedance, …): before calling `partner_generate`, check whether the named
+family also has an OSS route — some families (MiniMax H3 is a current
+example, as of 2026-08) ship BOTH a paid partner node and open-source weights
+under the identical display title. Run `search_templates` for the family name
+alongside `search_nodes`; if both exist, tell the user the OSS option exists
+(it has no partner/API fee, but running it still spends ordinary Comfy Cloud
+compute credits — it isn't free on Comfy Cloud, only free of the partner
+surcharge) and ask which they want. If only the partner route exists, or the
+user picks paid, call `partner_generate` — it runs the provider through Comfy
 Cloud and saves the result to your asset library. Do not hand-build a workflow
 for plain text-to-image/video when a partner model is named.
 
