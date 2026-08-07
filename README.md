@@ -25,6 +25,17 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 
 > **Other clients** (Claude Desktop, etc.) don't use Claude Code plugins — they connect to the same hosted MCP server through their own config. Full per-client setup lives in the docs: **https://docs.comfy.org/cloud/mcp**
 
+The **`comfy-local`** plugin does the same for [`comfy-mcp`](https://github.com/Comfy-Org/comfy-mcp), the stdio MCP server that drives **your own** ComfyUI install through `comfy-cli` — no cloud GPU, local execution:
+
+```
+/plugin marketplace add Comfy-Org/comfy-skills
+/plugin install comfy-local@comfy-skills
+```
+
+It launches `comfy-mcp` on demand via `uvx comfy-mcp`, so it needs `comfy-cli` installed and a Python environment `uvx` can use; no separate sign-in step beyond what `comfy-cli` itself requires. `comfy-mcp` ships on PyPI as `comfy-mcp`. Commands are namespaced the same way, e.g. `/comfy-local:generate-image`, `/comfy-local:search-nodes`, `/comfy-local:help`.
+
+`comfy-cloud` and `comfy-local` can both be installed at once — they talk to different servers (hosted vs. your machine) and their commands live under different namespaces.
+
 ## Commands
 
 | Command | What it does |
@@ -41,11 +52,19 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 | `/comfy-cloud:help` | Show what the Comfy Cloud tools can do |
 | `/comfy-cloud:combine-people` | Composite a user's photo with another person |
 | `/comfy-cloud:rickroll` | Exactly what it sounds like |
+| `/comfy-local:generate-image` | Generate, edit, or modify an image on your own ComfyUI |
+| `/comfy-local:generate-video` | Generate, edit, or extend a video on your own ComfyUI |
+| `/comfy-local:search-templates` | Search the built-in workflow template gallery |
+| `/comfy-local:search-models` | Search models on your local install |
+| `/comfy-local:search-nodes` | Search node classes on your local install |
+| `/comfy-local:project-status` | Check the comfy-cli project anchoring your local ComfyUI |
+| `/comfy-local:help` | Show what the local comfy-mcp tools can do |
 
 ## Repo layout
 
-- **`claude-code/`** — the `comfy-cloud` Claude Code plugin: `commands/` (the slash commands) plus `.claude-plugin/plugin.json` (metadata + the bundled MCP server). **Edit commands here.**
-- **`.claude-plugin/marketplace.json`** — the marketplace manifest so `/plugin marketplace add Comfy-Org/comfy-skills` resolves the plugin.
+- **`claude-code/`** — the `comfy-cloud` Claude Code plugin: `commands/` (the slash commands) plus `.claude-plugin/plugin.json` (metadata + the bundled hosted MCP server). **Edit `comfy-cloud` commands here.**
+- **`claude-code-local/`** — the `comfy-local` Claude Code plugin: `commands/` plus `.claude-plugin/plugin.json` (metadata + the bundled stdio MCP server, launched via `uvx comfy-mcp`). **Edit `comfy-local` commands here.**
+- **`.claude-plugin/marketplace.json`** — the marketplace manifest so `/plugin marketplace add Comfy-Org/comfy-skills` resolves both plugins.
 - **`skills/`** — *legacy* flat command files for the deprecated `comfy-cloud-mcp` curl installer. Frozen; will be removed once that installer fully retires.
 
 `comfy-cli`'s own agent skills (`comfy`, `comfy-debug`, `comfy-relay`, `comfy-director`, `comfy-build`, ...) no longer live here — they ship bundled inside [comfy-cli](https://github.com/Comfy-Org/comfy-cli) itself (`comfy_cli/skills/`), versioned with each CLI release, and are installed the same way as ever via `comfy skills install`.
@@ -63,8 +82,8 @@ If you find yourself writing a literal model name, template name, or node id int
 
 ## Contributing
 
-Commands are plain markdown with a short YAML frontmatter `description`. Add or edit a file under `claude-code/commands/`, keep it thin per the rule above, and open a PR. Run `claude plugin validate ./claude-code` before pushing. Keep prose clear and free of emoji.
+Commands are plain markdown with a short YAML frontmatter `description`. Add or edit a file under `claude-code/commands/` (comfy-cloud) or `claude-code-local/commands/` (comfy-local), keep it thin per the rule above, and open a PR. Run `claude plugin validate ./claude-code` and `claude plugin validate ./claude-code-local` before pushing. Keep prose clear and free of emoji.
 
 ## Status
 
-`comfy-cloud` is the canonical Claude Code plugin (MCP + commands). The legacy `skills/` flat layout remains only for the deprecated `comfy-cloud-mcp` installer and will be removed once that retires. Cursor / Codex support can be added later as sibling folders.
+`comfy-cloud` and `comfy-local` are the canonical Claude Code plugins (MCP + commands) for the hosted and local servers respectively. The legacy `skills/` flat layout remains only for the deprecated `comfy-cloud-mcp` installer and will be removed once that retires. Cursor / Codex support can be added later as sibling folders.
