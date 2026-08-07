@@ -69,7 +69,12 @@ Comfy Cloud credits and needs a subscription or credit balance.
 **Images and video from a named model** (Ideogram, Flux, Gemini, Kling, Veo,
 Seedance, …): call `partner_generate` — it runs the provider through Comfy
 Cloud and saves the result to your asset library. Do not hand-build a workflow
-for plain text-to-image/video when a partner model is named.
+for plain text-to-image/video when a partner model is named. Check first,
+though: some families (MiniMax H3 is a current example, as of 2026-08) ship
+BOTH a paid partner node and free open-source weights under the identical
+display title. Run `search_templates` for the family name alongside
+`search_nodes` — if both exist, tell the user the free/OSS option exists and
+ask which they want rather than defaulting to the paid partner path.
 
 **Anything workflow-shaped** (open-source models, LoRA/ControlNet, multi-step
 pipelines): start from a template — `search_templates` → `get_template_schema`
