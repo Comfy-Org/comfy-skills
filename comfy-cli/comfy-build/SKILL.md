@@ -34,7 +34,7 @@ Versions move. Read them at run time, and never carry one in from memory.
 | Question | Command |
 | --- | --- |
 | What Python, CUDA and torch will the build run? | `comfy distribution base-images` |
-| Which os/gpu targets can be cut? | `comfy distribution build-targets` |
+| Which os/gpu targets exist? | `comfy distribution build-targets` |
 | Which folders may a model go in? | `comfy distribution model-dirs` |
 | What did this version actually seal? | `comfy distribution version manifest <version-id>` |
 | Can I reach the builder? | `comfy distribution list` |
@@ -125,8 +125,8 @@ Both real policies share one shape: `{"mode": "blocklist", "list": []}` permits 
 The cut happens inside `--execute` and is not revisable: a fix is always a new version. So state it in one short block, then create:
 
 - **What is going in:** the ComfyUI pin, the base image with the Python and CUDA it brings, how many packs and how each is sourced, how many models and whether they upload or download.
-- **What is permitted:** the model, partner-node and custom-node postures in plain words, including the ones defaulting to allow-all.
-- **What it costs:** the default cut builds `linux/nvidia` only. A green build takes roughly ten minutes, a dependency failure usually surfaces in one or two, and the build sandbox is cut off after two hours.
+- **What is permitted:** the model and partner-node postures in plain words, including that both default to allow-all when nothing is set.
+- **What it costs:** a cut from the CLI builds `linux/nvidia`, the default, and takes no target flag, so do not promise a Windows or CPU artifact from here. A green build takes roughly ten minutes, a dependency failure usually surfaces in one or two, and the build sandbox is cut off after two hours.
 - **That it is one-way:** every correction is a new cut.
 
 ## Reading the verdict
