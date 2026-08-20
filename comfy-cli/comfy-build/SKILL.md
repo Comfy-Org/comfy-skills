@@ -18,7 +18,7 @@ The whole surface is `comfy distribution` in [comfy-cli](https://github.com/Comf
 | Step | Command | What it is for |
 | --- | --- | --- |
 | Define | `comfy distribution scan --python <comfyui-python> -o definition.json` | Evidence about the install. Not a buildable definition — see below. |
-| Define | `comfy distribution resolve` | Finds public download URLs for local model files, so they need no upload. |
+| Define | `comfy distribution resolve <filename> …` | Which local models have a hash-matched public download, so they need no upload. `--execute` runs this itself; use it early to know what the upload will weigh. |
 | Check | `comfy distribution create --from definition.json --name <name>` (no `--execute`) | Offline preview of exactly what would be sent. Makes no network call. |
 | Create | `comfy distribution create --from definition.json --name <name> --execute` | **Creates the distribution and immediately cuts build 1.** |
 | Read | `comfy distribution version get <version-id>` | `status`, `artifactCounts`, and a `failureReason` per target. |
