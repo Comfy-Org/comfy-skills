@@ -46,6 +46,7 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 
 - **`claude-code/`** — the `comfy-cloud` Claude Code plugin: `commands/` (the slash commands) plus `.claude-plugin/plugin.json` (metadata + the bundled MCP server). **Edit commands here.**
 - **`.claude-plugin/marketplace.json`** — the marketplace manifest so `/plugin marketplace add Comfy-Org/comfy-skills` resolves the plugin.
+- **`comfy-cli/`** — skills that [comfy-cli](https://github.com/Comfy-Org/comfy-cli)'s `comfy skills install` fetches from `main` and writes into Claude Code, Cursor and `AGENTS.md`. One directory per skill holding a single `SKILL.md` whose `name:` frontmatter equals the directory name; CI checks that with `comfy skills validate`.
 - **`skills/`** — *legacy* flat command files for the deprecated `comfy-cloud-mcp` curl installer. Frozen; will be removed once that installer fully retires.
 
 ## Authoring rule: steer the approach, defer the specifics

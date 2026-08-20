@@ -1,0 +1,41 @@
+# Checks every installer-consumed skill under comfy-cli/ against comfy-cli's own
+# skill contract. The contract lives in the CLI, not here: a mismatch between a
+# directory name and its `name:` frontmatter fails on the user's machine at
+# install time, which is far too late to find out.
+name: Validate Skills
+
+on:
+  pull_request:
+    paths:
+      - "comfy-cli/**"
+      - ".github/workflows/validate-skills.yml"
+  push:
+    branches: [main]
+    paths:
+      - "comfy-cli/**"
+      - ".github/workflows/validate-skills.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      DO_NOT_TRACK: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      # `skills validate` landed in 1.11.0.
+      - run: pip install "comfy-cli>=1.11"
+      - name: Validate each skill directory
+        run: |
+          shopt -s nullglob
+          dirs=(comfy-cli/*/)
+          # An empty run would pass while proving nothing.
+          [[ ${#dirs[@]} -gt 0 ]] || { echo "no skill directories under comfy-cli/"; exit 1; }
+          for dir in "${dirs[@]}"; do
+            comfy skills validate "${dir%/}"
+          done
