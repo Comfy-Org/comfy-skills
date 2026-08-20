@@ -19,13 +19,17 @@ The whole surface is `comfy distribution` in [comfy-cli](https://github.com/Comf
 | --- | --- | --- |
 | Define | `comfy distribution scan --python <comfyui-python> -o definition.json` | Evidence about the install. Not a buildable definition; see below. |
 | Define | `comfy distribution resolve <filename> …` | Which local models have a hash-matched public download, so they need no upload. `--execute` runs this itself; use it early to know what the upload will weigh. |
-| Check | `comfy distribution create --from definition.json --name <name>` (no `--execute`) | Offline preview of exactly what would be sent. Makes no network call. |
-| Create | `comfy distribution create --from definition.json --name <name> --execute` | **Creates the distribution and immediately cuts build 1.** |
+| Check | `comfy distribution create --from definition.json --name <name>` (no `--execute`) | Offline preview. Makes no network call, and shows you what `create` would strip. |
+| Seed | `comfy distribution create --from seed.json --name <name> --execute` | Creates the distribution. Also cuts a throwaway build. See below. |
+| Load | `comfy distribution update <id> --from definition.json` | Puts the real definition on it. This, not `create`, is what carries it. |
+| Check | `comfy distribution validate <id>` | Free. Run it before every cut. |
+| Cut | `comfy distribution version create <id>` | The build that counts. |
 | Read | `comfy distribution version get <version-id>` | `status`, `artifactCounts`, and a `failureReason` per target. |
 | Read | `comfy distribution version logs <version-id>` | The build log for one target. |
-| Revise | `comfy distribution update <id> --from definition.json`, then `comfy distribution validate <id>`, then `comfy distribution version create <id>` | The only way to change anything. Every cut is a new version. |
 
-**There is no create-without-building.** `--execute` creates *and* cuts, so the free server-side `validate` cannot run before the first build. Everything checkable for free, check before `--execute`; `validate` is the gate on every cut after that.
+**`create` does not send your definition; it sends a reduction of it.** It keeps `baseComfyVersion` and `pipDependencies`, drops `baseImage`, `modelPolicy` and `partnerNodePolicy` on the floor, and turns every node that is not a git checkout into an upload that `--execute` then refuses outright. A registry-pinned definition cannot go through it at all.
+
+So seed with a definition small enough not to care about, then `update` with the real one. Two consequences to say out loud: **the first create spends a throwaway build**, because `--execute` always cuts and there is no create-without-building; and **from the second cut onward `validate` is a real gate**, which is the only free server-side check you get.
 
 ## Ask the platform, never remember
 
@@ -62,6 +66,12 @@ which becomes:
 { "id": "comfyui-kjnodes", "name": "comfyui-kjnodes", "registryVersion": "1.4.9" }
 ```
 
+**Confirm the id before you trust it.** A pack published from a pull-request preview carries that preview's id in its `pyproject.toml` (`pr-was-node-suite-comfyui-47064894`), which does not exist in the registry. Check each one, and fall back to the directory name, which is what the registry usually knows it as:
+
+```
+curl -s -o /dev/null -w '%{http_code}' "https://api.comfy.org/nodes/<id>/install?version=<version>"
+```
+
 The builder resolves that pair against the registry and installs the published artifact. A node sets **exactly one** source:
 
 - `repository` (an `https://github.com/{org}/{repo}` URL), optionally with a `gitRef`,
@@ -96,6 +106,15 @@ uv pip compile pins.txt --python-version <base image python> --python-platform x
 
 A freeze can be unbuildable because the install itself is inconsistent: `comfy node install` can leave an environment that already fails `pip check`. Run it. A conflict there is a conflict about to be shipped.
 
+### The resolve is not the final environment
+
+**A clean `uv pip compile` does not mean the packs will import.** Two things happen after the resolve that it cannot see: ComfyUI-Manager runs each pack's own install step at build time, which `uv pip install`s packages outside the lock, and a wheel compiled against NumPy 1.x aborts at import under NumPy 2.x however cleanly it resolved. That is a C-API break, invisible to a resolver, and it fails at `assemble` with `numpy.core.multiarray failed to import`.
+
+So pin the two axes that float, even when nothing looks like it conflicts:
+
+- **`numpy`**, because unpinned it resolves to the newest 2.x while older packs still ship 1.x-compiled binaries. Match what the install actually runs.
+- **`opencv-python` and `opencv-python-headless` together**, because they collide on `cv2` and packs pull both. An install carrying both locally will carry both into the build.
+
 ## What `validate` proves, and what it does not
 
 `comfy distribution validate <id>` is free, and worth running before every cut after the first. It checks the definition's **shape**, that a ComfyUI version is pinned, and that each pinned pip package and version **exists**. It does not resolve the set together, so it returns `ok: true` on definitions that die at assemble.
@@ -126,7 +145,7 @@ The cut happens inside `--execute` and is not revisable: a fix is always a new v
 
 - **What is going in:** the ComfyUI pin, the base image with the Python and CUDA it brings, how many packs and how each is sourced, how many models and whether they upload or download.
 - **What is permitted:** the model and partner-node postures in plain words, including that both default to allow-all when nothing is set.
-- **What it costs:** a cut from the CLI builds `linux/nvidia`, the default, and takes no target flag, so do not promise a Windows or CPU artifact from here. A green build takes roughly ten minutes, a dependency failure usually surfaces in one or two, and the build sandbox is cut off after two hours.
+- **What it costs:** two builds, since the seeding create spends one. A cut from the CLI builds `linux/nvidia`, the default, and takes no target flag, so do not promise a Windows or CPU artifact from here. A green build takes roughly ten minutes, a dependency failure usually surfaces in one or two, and the build sandbox is cut off after two hours.
 - **That it is one-way:** every correction is a new cut.
 
 ## Reading the verdict
@@ -136,7 +155,8 @@ The cut happens inside `--execute` and is not revisable: a fix is always a new v
 | What the failure says | What it means |
 | --- | --- |
 | `freeze: pin ComfyUI "...": ref not found in remote advertisement` | The ComfyUI pin is not a real git ref. Prefix the tag. |
-| `assemble: ComfyUI did not start` | Something was installed against a torch the runtime does not have, usually one torch-stack member pinned while the other two were released. |
+| `assemble: ComfyUI did not start` + `numpy.core.multiarray failed to import` | A pack's binary was compiled against NumPy 1.x and the resolve floated NumPy to 2.x. Pin `numpy`. |
+| `assemble: ComfyUI did not start`, torch or `torchvision::nms` in the log | Something was installed against a torch the runtime does not have, usually one torch-stack member pinned while the other two were released. |
 | `no version of ... your requirements are unsatisfiable` | A pin PyPI cannot serve, usually a local version tag. |
 
 ## For maintainers
