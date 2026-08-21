@@ -24,8 +24,12 @@ jobs:
     env:
       DO_NOT_TRACK: "1"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The job installs comfy-cli from PyPI, so it must not leave a usable
+          # GITHUB_TOKEN in the git config for that code to find.
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
       # `skills validate` landed in 1.11.0.
