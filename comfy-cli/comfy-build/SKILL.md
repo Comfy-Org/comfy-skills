@@ -1,47 +1,121 @@
 ---
 name: comfy-build
-description: Build a ComfyUI distribution on the Comfy developer platform with comfy-cli — turn a local ComfyUI install, a workflow file, or a described intent into a distribution that builds, pin its dependencies before the first paid build, and read a failed build's log. Scaffold only; the guidance is not written yet.
+description: Build a ComfyUI distribution on the Comfy developer platform with comfy-cli: turn a local ComfyUI install into a distribution that builds, decide the dependency pins before the first paid build, and read a failed build's log.
 ---
 
 # comfy-build
 
-Turning a starting point into a ComfyUI distribution that builds, driven entirely
+Turning a local ComfyUI install into a distribution that builds, driven entirely
 through `comfy distribution` in [comfy-cli](https://github.com/Comfy-Org/comfy-cli).
 
-## This skill is a scaffold
+**A build costs the user money and takes minutes.** Everything checkable for free
+is checked before the cut, and the user hears what it costs before it starts.
 
-**It carries no guidance yet.** The file exists so the installer has something to
-deliver and so a later revision reaches users without a CLI release. Everything
-below is what will fill it, not what it says today.
+## What the platform is, in four facts
 
-**Until it is filled, do not improvise a build.** Read `comfy distribution --help`
-and the per-command `--help` for the real command surface, tell the user this
-skill is still a stub, and do not guess at a definition — cutting a version
-starts a build that costs the user money.
+- **A distribution is an editable definition**; a **version** is an immutable cut
+  of it. Editing a distribution changes nothing that exists yet.
+- **A fix is always a new cut.** Nothing is patched in place.
+- **A cut from the CLI builds `linux/nvidia`** and takes no target flag, so do
+  not promise a Windows or CPU artifact from here.
+- **This skill stops at a green build.** Deploying is a separate decision and not
+  yours to take.
 
-## What will fill it
+## The path
 
-- **The path**: the command sequence from each of the three starting points — a
-  local install, a workflow file, a described intent — and when to leave it.
-- **Platform facts an agent cannot infer**: what a distribution is, that a
-  version is immutable so a fix is always a new cut, and what a build costs in
-  time so the user hears expectations before paying.
-- **The pinning method**: how to anticipate a dependency conflict across
-  ComfyUI, every custom node and torch, before the first paid build.
-- **The limits of the free checks**: `validate` proves existence, not
-  resolution, so a passing validate is not a safe build.
-- **Failure reading**: how to map a failed target's build log to one definition
-  edit, one revision per failed cut.
-- **The restated guardrails**: what the platform website enforces at creation
-  time, restated so the CLI path refuses what the website would refuse.
+```
+comfy distribution scan --models-dir <install>/models -o definition.json
+comfy distribution create --from definition.json --name <name> --execute
+comfy distribution version get <version-id>
+```
 
-## For maintainers
+`create --execute` creates the distribution and cuts one build. There is no
+create-without-building, so everything you meant to change must be in
+`definition.json` before you run it.
 
-The design and the features that fill this file are in
-[Local agent access to the builder via comfy-cli skills](https://app.notion.com/p/3c26d73d365081ef9322ca2978e49d3d).
+**The Desktop shortcut.** When the install is Comfy Desktop and its models are
+public or already staged, one call does it instead:
 
-`comfy skills install` fetches this file from `main` and writes it beside the
-skills comfy-cli bundles, so a merge here reaches users on their next install
-without waiting on a CLI release.
-The directory name and the `name:` above must stay identical — comfy-cli's
-installer rejects a mismatch, and it rejects it on the user's machine, not here.
+```
+comfy distribution from-snapshot --from <install>/.launcher/snapshots/<file>.json --name <name>
+```
+
+It carries no models, so use the scan path whenever private model files have to
+travel with the environment.
+
+## What the CLI already decides, so you do not
+
+Do not hand-edit any of this. Editing it is how a working definition gets broken.
+
+- **The pack sources.** `scan` reads each pack's registry id and version, or its
+  git remote and commit. A pack with neither is marked `local`.
+- **The ComfyUI ref.** `scan` writes the tag the builder can resolve.
+- **The base image, and which pins the build owns.** The builder's importer picks
+  the image from the scanned Python and drops torch and ComfyUI's own packages.
+- **Whether a registry pin exists.** `create --execute` asks the builder before
+  spending the cut, and stops if a pack cannot be vouched for.
+
+## The one judgment left: the pins
+
+`scan` captures a pip freeze from **the machine you are on**, and the build runs
+somewhere else: a different OS, a different Python, a different accelerator. The
+freeze is evidence about what worked, never a set of targets.
+
+- **Pin what conflicts, and nothing else.** Every pin you add is a constraint the
+  build must satisfy, and the build owns torch already.
+- **`numpy` and `scipy` are one axis, not two.** Pinning numpy down while scipy
+  floats gives you a scipy compiled against the numpy you just removed, which
+  fails at ComfyUI startup rather than at resolve.
+- **`opencv-python` and `opencv-python-headless` collide on `cv2`.** An install
+  carrying both carries both into the build.
+- **A clean `uv pip compile` does not mean the packs import.** Resolution and the
+  C API are different questions, and node install scripts run at build time
+  outside the lock.
+
+Pin through `pipDependencies`, one requirement per line.
+
+## Before you spend the cut
+
+Say all of this to the user, in their words, and wait:
+
+- **What it costs**: one build, several minutes, and money.
+- **What it produces**: a `linux/nvidia` artifact and nothing else.
+- **That a fix means another cut**, at the same cost.
+- **The policies**, because a definition that sets none is sealed permitting
+  every model and every partner node. The website asks; here nobody does unless
+  you do.
+
+## Reading what comes back
+
+`create` prints advisories from the import. Treat them as follows:
+
+- **`notInRegistry`, `unresolvedNodes`**: fatal. The pack is not in the build.
+  Fix the pin or drop the pack.
+- **`collidingNodes`**: a pack was left out because another claimed its folder.
+  The build proceeds without it.
+- **`pythonSatisfied: false`**: the build runs on a different Python than the
+  freeze was taken on, so retarget the pins rather than trusting them.
+- **`skippedPins`, `unpinnablePins`**: normal. The build owns those.
+
+Then poll `comfy distribution version get <id>` until `status` is `complete`, and
+read `deployable`. `ready` on every artifact is the green build.
+
+## When a build fails
+
+One edit per failed cut, then `comfy distribution update` and cut again.
+
+| The log says | It means |
+| --- | --- |
+| `numpy.core.multiarray failed to import` | a pack's binary wants NumPy 1.x and the resolve floated to 2.x. Pin `numpy`, and `scipy` with it. |
+| `assemble: ComfyUI did not start`, torch in the trace | something installed against a torch the runtime does not have. Remove the torch pin. |
+| `declared custom nodes failed to import` | the named pack's dependencies are wrong, not the platform's. |
+| `freeze: pin registry node ... not found` | the pin names a version the registry does not publish. |
+
+`comfy distribution version logs <id> --os linux --gpu nvidia` is the whole log.
+The failure reason on the artifact is the summary.
+
+## What this skill will not do
+
+- **Deploy anything.** A green build is where this stops.
+- **Invent a policy** on the user's behalf. State the default and let them choose.
+- **Promise a target the CLI cannot cut**, which is anything but `linux/nvidia`.
