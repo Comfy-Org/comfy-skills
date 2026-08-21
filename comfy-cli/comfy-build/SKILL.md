@@ -105,6 +105,40 @@ Then two rules for anything you do keep:
 - **An override forces a version, it never adds a package.** Pinning something
   nothing requires installs nothing.
 
+## Predict the conflict instead of buying it
+
+A build takes minutes and money to tell you two packages disagree. Resolving the
+same set locally takes seconds and is free, so do it before every first cut.
+
+Collect what the packs and ComfyUI actually declare, which is not the freeze:
+
+```
+comfy distribution base-images                        # the python the build uses
+cat <install>/requirements.txt <install>/custom_nodes/*/requirements.txt > declared.txt
+uv pip compile declared.txt --python-version 3.12 --python-platform linux -o resolved.txt
+```
+
+Read `resolved.txt` for three shapes, all of which cost a build otherwise:
+
+- **It refuses to resolve.** Two packs demand incompatible versions. The error
+  names both, and one of them is your pin.
+- **Two distributions provide one import.** `opencv-python` and
+  `opencv-python-headless` both install `cv2`, and a real install produced
+  `5.0.0.93` and `4.7.0.72` together. Pin one, drop the other.
+- **A package resolves older than your install runs.** Compare against the freeze
+  `scan` captured. An old pack forcing `timm==0.6.13` under an install running
+  `1.0.28` is the pack that will break, and that version gap is the pin to write.
+  Ignore torch, torchvision and torchaudio here: the build owns those and always
+  differs.
+
+**What this cannot see**, so a clean resolve is not a promise:
+
+- **A binary compiled against another version.** NumPy is the usual one: every
+  version constraint is satisfied and the pack still aborts at import with
+  `numpy.core.multiarray failed to import`.
+- **Install scripts.** Packs run their own at build time and install outside the
+  lock, so the final environment is not the one you resolved.
+
 ## Before you spend the cut
 
 Say all of this, in plain words, and wait for a yes:
