@@ -38,16 +38,13 @@ comfy distribution create --from definition.json --name <name> --models-dir <ins
 comfy distribution version get <version-id>
 ```
 
-- **Do not log in pre-emptively.** `COMFY_BUILDER_TOKEN`, the environment variable
-  holding a platform access token for non-interactive use, is often already set,
-  and `comfy cloud login` needs a browser, so running it first hangs a headless
-  session that was already authenticated. Run it only if a command actually
-  answers `not signed in`. A 403 `FEATURE_NOT_ENABLED` means the account is not
-  in the beta, and no edit fixes that.
+- **Only sign in when told to.** Run `comfy cloud login` if a command answers
+  `not signed in`, and not before. On `FEATURE_NOT_ENABLED`, stop and tell the
+  user the account does not have access yet.
 - **`comfy which` names the install** when the user has not said where it is.
-- **The fourth line is the free preview.** No network call, and it prints the
-  exact definition that would be sent plus the upload total. Always run it, and
-  show the user that total before the line that sends it.
+- **`create` without `--execute` is the preview.** It makes no network call and
+  prints the exact definition that would be sent plus the upload total. Always
+  run it, and show the user that total before the line that sends it.
 - **`--models-dir` is needed on `--execute` too**, or the upload cannot find the
   bytes.
 - **If `scan` warns it captured no pip freeze or no ComfyUI version**, re-run it
@@ -185,11 +182,10 @@ Say all of this, in plain words, and wait for a yes:
 - **What it takes**: the upload, then a build of several minutes.
 - **The budget**: that a failure means a fix and another build, and that you will
   stop after three.
-- **The policy**, in these words rather than the platform's: this build records
-  no restriction on which models or partner nodes it permits, and that
-  record is sealed into the version. Clients read it; the backend does not
-  enforce it here. Ask whether they want it left open or written down as the
-  models and nodes they actually use.
+- **The policy.** Say that the version will record no restriction on which
+  models or partner nodes it permits, and that the record cannot be changed after
+  the cut. Ask whether to leave it open or to write down the models and nodes
+  they use.
 
 ## Reading what comes back
 
