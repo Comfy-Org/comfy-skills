@@ -23,7 +23,6 @@ and agrees before any cut.
 ## The path
 
 ```
-comfy cloud login
 comfy which
 comfy distribution scan --models-dir <install>/models --python <install>/.venv/bin/python -o definition.json
 comfy distribution create --from definition.json --name <name>
@@ -31,10 +30,11 @@ comfy distribution create --from definition.json --name <name> --models-dir <ins
 comfy distribution version get <version-id>
 ```
 
-- **Log in first.** Every builder command exits with `not signed in` otherwise.
-  A non-interactive session sets `COMFY_BUILDER_TOKEN` instead. A 403
-  `FEATURE_NOT_ENABLED` means the account is not in the beta, and no edit fixes
-  that.
+- **Do not log in pre-emptively.** `COMFY_BUILDER_TOKEN` is often already set,
+  and `comfy cloud login` needs a browser, so running it first hangs a headless
+  session that was already authenticated. Run it only if a command actually
+  answers `not signed in`. A 403 `FEATURE_NOT_ENABLED` means the account is not
+  in the beta, and no edit fixes that.
 - **`comfy which` names the install** when the user has not said where it is.
 - **The fourth line is the free preview.** No network call, and it prints the
   exact definition that would be sent plus the upload total. Always run it, and
