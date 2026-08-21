@@ -107,37 +107,55 @@ Then two rules for anything you do keep:
 
 ## Predict the conflict instead of buying it
 
-A build takes minutes and money to tell you two packages disagree. Resolving the
-same set locally takes seconds and is free, so do it before every first cut.
+A build takes minutes and money to tell you two packages disagree. Most of that
+answer is sitting in text files on the user's disk, so look before you spend.
 
-Collect what the packs and ComfyUI actually declare, which is not the freeze:
+### Always, and it needs no tools
+
+The packs declare what they want. Read it:
 
 ```
-comfy distribution base-images                        # the python the build uses
-cat <install>/requirements.txt <install>/custom_nodes/*/requirements.txt > declared.txt
-uv pip compile declared.txt --python-version 3.12 --python-platform linux -o resolved.txt
+cat <install>/requirements.txt <install>/custom_nodes/*/requirements.txt
 ```
 
-Read `resolved.txt` for three shapes, all of which cost a build otherwise:
+Three shapes in that text are worth a build each:
 
-- **It refuses to resolve.** Two packs demand incompatible versions. The error
-  names both, and one of them is your pin.
-- **Two distributions provide one import.** `opencv-python` and
-  `opencv-python-headless` both install `cv2`, and a real install produced
-  `5.0.0.93` and `4.7.0.72` together. Pin one, drop the other.
-- **A package resolves older than your install runs.** Compare against the freeze
-  `scan` captured. An old pack forcing `timm==0.6.13` under an install running
-  `1.0.28` is the pack that will break, and that version gap is the pin to write.
-  Ignore torch, torchvision and torchaudio here: the build owns those and always
-  differs.
+- **Two names for one import.** `opencv-python` and `opencv-python-headless` both
+  install `cv2`, and a real install had four packs asking for both. One of them
+  loses, and whichever loses, something breaks.
+- **A ceiling on a shared package.** A line like
+  `opencv-python-headless[ffmpeg]<=4.7.0.72` holds everyone at a 2023 build. That
+  single line is the most common cause of a failed first build here, because that
+  wheel predates NumPy 2 and aborts at import under it.
+- **A pack pinning far below what the install runs.** Compare a pin against the
+  freeze `scan` captured. `timm==0.6.13` under an install running `1.0.28` is a
+  pack that has not been touched in two years, and that gap is the pin to write.
 
-**What this cannot see**, so a clean resolve is not a promise:
+Ignore `torch`, `torchvision` and `torchaudio` in all of this. The build owns
+them and they always differ.
 
-- **A binary compiled against another version.** NumPy is the usual one: every
-  version constraint is satisfied and the pack still aborts at import with
-  `numpy.core.multiarray failed to import`.
-- **Install scripts.** Packs run their own at build time and install outside the
-  lock, so the final environment is not the one you resolved.
+### When a resolver is available, confirm it
+
+The transitive answer needs one. `uv` is usually already in the install:
+
+```
+<install>/.venv/bin/uv pip compile declared.txt --python-version 3.12 --python-platform linux -o resolved.txt
+```
+
+Use the base image's python, which `comfy distribution base-images` names. A
+refusal to resolve is the clearest possible finding: the error names both sides.
+Plain `pip` cannot do this reliably for another platform, so do not force it.
+
+**When there is no resolver**, offer to install one, and say plainly what it is
+for. If the user would rather not, say the check was the reading above only, and
+that the build is now the first thing that will disagree with you.
+
+### What none of this can see
+
+- **A binary compiled against another version.** Every constraint is satisfied
+  and the pack still aborts with `numpy.core.multiarray failed to import`.
+- **Install scripts.** Packs run their own at build time, outside the lock, so
+  the final environment is not the one you resolved.
 
 ## Before you spend the cut
 
