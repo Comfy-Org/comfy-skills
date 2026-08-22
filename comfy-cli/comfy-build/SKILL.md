@@ -5,8 +5,9 @@ description: Create a Comfy Build on the developer platform with comfy-cli: turn
 
 # comfy-build
 
-Every command here is `comfy build`, from
-[comfy-cli](https://github.com/Comfy-Org/comfy-cli).
+The platform commands here are the `comfy build` group, from
+[comfy-cli](https://github.com/Comfy-Org/comfy-cli); `comfy which` and
+`comfy cloud login` are its two helpers.
 
 **A cut is not undoable and a build takes minutes**, so the user hears what is
 about to be sent, and agrees, before anything leaves their machine.
