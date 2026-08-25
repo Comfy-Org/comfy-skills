@@ -84,41 +84,53 @@ model files have to travel.
 **The workflow shortcut.** When all the user has is a workflow file:
 
 ```shell
-comfy build from-workflow --from <workflow>.json --name <name>
+comfy --json build from-workflow --from <workflow>.json --name <name>
 ```
 
 - **Check for the verb rather than a version.** `comfy build --help` either
-  lists `from-workflow` or does not; 1.18.0 does not carry it, and a CLI run
-  from source reports a version no comparison can use. A `404` back from the
-  call means the platform does not serve this path yet, so fall back to
-  assembling the set as *When all you have is a description* describes.
+  lists `from-workflow` or does not: 1.18.0 does not carry it, and a CLI run
+  from source reports a version no comparison can use. When the verb is there
+  and the call still fails, fall back to assembling the set as *When all you
+  have is a description* describes.
 - **It creates on the platform, so get the yes first.** There is no preview to
   run and no `--execute` to withhold: the call itself writes the build. Say what
   it will create, and wait.
 - **Hand it the file unchanged.** It reads the editing format and the API
   export, so converting first only refuses files it would have taken.
+- **Save the report before you touch the definition.** Everything below lives in
+  `report`, and the build's copy of it is cleared by the first save, so an
+  update run first destroys it with no way back but a fresh import. Take the
+  `--json` output to a file and work from that. Pretty mode prints a summary
+  only, capped at eight names per line.
 - **It creates but does not cut, and usually cannot be cut yet.**
   `comfyVersionRequired: true` says `baseComfyVersion` is unpinned, which a
-  fresh import always is, because a workflow names no ComfyUI version. Read the
-  definition back, add one, and update:
+  fresh import always is, because a workflow names no ComfyUI version. Add one,
+  then cut:
 
   ```shell
   comfy --json build get <build-id> | jq .data.definition > def.json
   comfy build update <build-id> --from def.json
+  comfy build release create <build-id>
   ```
 
   `--json` is a root flag, so it goes before `build`, not after `get`.
-- **The models it names are not in the definition, and `status` says what each
-  one needs.** A workflow carries a filename and no source, so every model comes
-  back under `models` instead: `matched` means that exact file is known and needs
-  only a `sourceUri` written in, `suggested` carries a near-miss name to check
-  before you trust it, and `missing` is yours to find. Each entry also names the
-  classes that used it in `usedBy` and the folders holding that filename in
-  `directories`, which together beat the `model-dirs` menu as evidence for its
-  `type`.
-- **`pinnedToLatest: true` is normal, and worth saying out loud.** A workflow
-  names no versions, so every pack was pinned to the registry's newest published
-  one, and importing the same file next week can build something different.
+- **No model the workflow names reaches the definition**, because a workflow
+  gives a filename and no source. Each one comes back under `models` with a
+  `status`: `matched` means the catalog holds that exact name, `suggested`
+  carries near-miss names to check before trusting one, and `missing` is yours
+  to find. All three still need `comfy build resolve` for a `sourceUri` and a
+  digest, which the report never carries. `usedBy` names the classes that loaded
+  it, which is the lead worth following for its `type`: `directories` answers
+  where the catalog keeps a file of that name, not where the pack reads, and it
+  is absent on everything except `matched`.
+- **`pinnedToLatest: true` means at least one pack** was pinned to the
+  registry's newest published version, since a workflow names none. Importing
+  the same file next week can then build something else, and that is worth
+  saying out loud.
+- **A pack under `packsWithoutVersion` arrives with no `gitRef`**, so it builds
+  from whatever its default branch points at that day. Pin a commit before you
+  cut, exactly as *Confirm, then write the definition* requires of any
+  `repository` entry.
 
 ## When all you have is a description
 
@@ -535,8 +547,9 @@ From a workflow, five more:
   will not run without them, so this is the list to take to the user.
   `unknownClasses` is the same thing with the packs their nearest matches belong
   to.
-- **`uncheckedClasses`**: the registry never answered for these, so their absence
-  from the definition is not evidence that they are missing.
+- **`uncheckedClasses`**: the registry never answered, so these packs are not in
+  the definition and nothing established whether they exist. Cutting now ships
+  an environment without them.
 - **`packsWithoutVersion`**: the registry knows the pack and publishes nothing
   installable, so it is carried from its repository and installs from source.
 - **`collidingPacks`**: left out, because a cut refuses a definition holding two
