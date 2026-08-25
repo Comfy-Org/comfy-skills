@@ -51,6 +51,11 @@ comfy build version get <version-id>
 - **If `scan` warns it captured no pip freeze or no ComfyUI version**, re-run it
   with `--python` or `--comfy-version <ref>`. `create` refuses a definition with
   no version.
+- **`scan` takes a weight's directory under `models/` as its `type`**, so
+  placement is free here. It collects only `.ckpt`, `.pt`, `.bin`, `.pth` and
+  `.safetensors`, and only from a folder, so another format, a weight loose in
+  `models/`, and anything cached outside the tree are absent without a word.
+  Check the count against the install.
 
 **The Desktop shortcut.** When the install is Comfy Desktop:
 
