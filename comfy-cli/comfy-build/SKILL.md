@@ -154,35 +154,29 @@ comfy build resolve <filename> [<filename> ...]
 
 ### Where the file lands, and whether the pack looks there
 
-**A model's `type` is the directory, literally.** Nothing is baked into the
-image: the runtime stages each model at `models/<type>/<filename>` on a volume
-and points ComfyUI at the top-level segment of every type it staged. So
-`text_encoders/gemma_3_12b_it_hf` is as much a `type` as `checkpoints`.
+**A model's `type` is the directory it is placed in**, relative to `models/`,
+so `text_encoders/gemma_3_12b_it_hf` is as much a `type` as `checkpoints`.
 
-**`comfy build model-dirs` is a menu, not the accepted set.** The builder takes
-any relative path that can only land inside `models/` besides, precisely because
-packs read from folders no list can enumerate. It refuses a `configs` or
-`custom_nodes` root, a segment that is not alphanumeric-led or ends in a dot, a
-Windows device name, and a case variant of a vetted name (`Loras` where `loras`
-is vetted).
+**`comfy build model-dirs` is a menu, not the accepted set.** Any relative
+path that stays inside `models/` is accepted too, since packs read from folders
+no list can enumerate. Refused: a `configs` or `custom_nodes` root, a segment
+that is not alphanumeric-led or ends in a dot, a Windows device name, and a case
+variant of a vetted name (`Loras` where `loras` is vetted).
 
-**So write the directory the pack reads from.** Nothing reconciles the two: the
-builder decides where a file may land and never asks whether a node looks there,
-so a plausible wrong answer builds green and finds nothing. `RMBG` is right for
-a pack reading `models/RMBG/`; `background_removal` is the menu answer that
-leaves the weight where nothing looks. It reaches only a pack that resolves
-through ComfyUI's `folder_paths` under that name — one hardcoding a path under
-the image's own `models/` never sees the volume. When you cannot establish the
-path, say so rather than picking.
+**So write the directory the pack reads from.** Nothing checks the two against
+each other: `type` decides where the file goes, never whether a node looks
+there, so a plausible wrong answer builds green and finds nothing. `RMBG` is
+right for a pack reading `models/RMBG/`; `background_removal` is the menu answer
+that leaves the weight where nothing looks. Read the pack for the path it
+resolves, and when you cannot establish it, say so rather than picking.
 
-**A pack that fetches its own weights need not be dropped.** Both the build
-sandbox and the runtime reach the public internet; the boundary is our own
-infrastructure, not egress. An `install.py` download lands in the ComfyUI tree,
-which is archived whole, so it is in the image and needs no entry. A
-first-execution download lands on a container disk that is thrown away, so it
-repeats every cold start inside the first job's latency and is invisible to the
-readiness check. Declare the file when you can name it and its directory;
-otherwise keep the pack and say the first job will be slow.
+**A pack that fetches its own weights need not be dropped**, and when it
+fetches decides what it costs. A pack that downloads during its install step has
+the file in the built environment already, so there is nothing to declare. A
+pack that downloads on first execution fetches it again whenever the environment
+starts cold, inside that first run, and no declared model covers it. Declare the
+file when you can name it and its directory; otherwise keep the pack and say the
+first run will be slow.
 
 ### Confirm, then write the definition
 
@@ -483,7 +477,7 @@ wait.
    own. `timeline`'s `error` entries say the same thing per phase.
 2. `comfy build version logs <version-id>`: the whole stored log. Read the tail
    for the summary line, then the middle, which is where the cause usually is.
-   Only a log over 8 MiB loses its middle, and `truncated` says when.
+   `truncated` is what says the middle is gone, and it rarely is.
 
 **When there is no log**, capture is best-effort and the route returns an empty
 string. Fall back to the artifact's `failureReason`. When both are empty, say
