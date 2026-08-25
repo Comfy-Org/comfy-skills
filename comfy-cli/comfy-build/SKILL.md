@@ -398,19 +398,22 @@ wait.
 
 **Read in this order.**
 
-1. `comfy build version get <version-id>`: `failureReason` is the build's
-   own final cause line, and often enough on its own.
-2. `comfy build version logs <version-id>`: the whole stored log. Read the
-   tail first, because an oversized log keeps its head and tail and drops the
-   middle. When `truncated` is true, the middle is gone and is not worth hunting.
+1. `comfy build version get <version-id>`: **`failureReason` is per target, at
+   `artifacts[].failureReason`; the version itself carries none.** The failed
+   artifact's line is the build's own final cause and is often enough on its
+   own. `timeline`'s `error` entries say the same thing per phase.
+2. `comfy build version logs <version-id>`: the whole stored log. Read the tail
+   for the summary line, then the middle, which is where the cause usually is.
+   Only a log over 8 MiB loses its middle, and `truncated` says when.
 
 **When there is no log**, capture is best-effort and the route returns an empty
-string. Fall back to `failureReason`. When both are empty, say exactly that and
-stop rather than guessing.
+string. Fall back to the artifact's `failureReason`. When both are empty, say
+exactly that and stop rather than guessing.
 
 | The log says | The one edit |
 | --- | --- |
-| `numpy.core.multiarray failed to import` | Pin `numpy` and `scipy` together, to versions released for each other. |
+| `numpy.core.multiarray failed to import`, with `_ARRAY_API not found` above it | A binary built against NumPy 1, not a version disagreement. Pin the two packages providing the failing import to one current version. Never pin `numpy` down to suit the old wheel: core declares `numpy>=1.25.0`. |
+| the same, with no `_ARRAY_API` line | `numpy` and `scipy` mismatched. Pin both, to versions released for each other. |
 | `no attribute 'long'`, `scipy` in the trace | The same pair, mismatched. Fix both, not one. |
 | `assemble: ComfyUI did not start`, torch in the trace | Remove every torch pin. The build owns that stack. |
 | `declared custom nodes failed to import` | Read the parenthesised cause per pack. One shared cause explains several packs; fix the cause, not each pack. |
@@ -429,8 +432,12 @@ not read returns the same failed version and builds nothing. `create --execute`
 also stitches uploaded blob ids into the definition it sent, not into your file,
 so take the current one back before editing:
 `comfy build version get <version-id>` returns it. Then
-`comfy build update <id> --from definition.json` and
-`comfy build version create <id>`.
+`comfy build update <build-id> --from definition.json` and
+`comfy build version create <build-id>`.
+
+**Two ids.** `version get` and `version logs` take the version id; `update`,
+`validate` and `version create` take the build id, which the version you just
+read names at `buildId`.
 
 **When you stop**, leave the user the definition on disk, every version id, the
 cause you could not get past, and how many builds were spent.
