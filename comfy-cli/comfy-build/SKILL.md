@@ -9,6 +9,10 @@ The platform commands here are the `comfy build` group, from
 [comfy-cli](https://github.com/Comfy-Org/comfy-cli); `comfy which` and
 `comfy cloud login` are its two helpers.
 
+**Needs comfy-cli 1.18.0 or newer.** Earlier versions have no `build` group at
+all, so `comfy build scan` answers `No such command 'build'`. Check with
+`comfy --version` and upgrade before reading further.
+
 **A cut is not undoable and a build takes minutes**, so the user hears what is
 about to be sent, and agrees, before anything is created on the platform.
 
@@ -44,6 +48,9 @@ comfy build release get <release-id>
   `not signed in`, and not before. On `FEATURE_NOT_ENABLED`, stop and tell the
   user the account does not have access yet.
 - **`comfy which` names the install** when the user has not said where it is.
+- **`--name` is yours to choose and the user's to keep.** It is how they will
+  find the build later, so propose one from the install or the result they asked
+  for and say it in the disclosure. Omitted, every build is `untitled-build`.
 - **`create` without `--execute` is the preview.** It makes no network call and
   prints the exact definition that would be sent plus the upload total. Always
   run it, and show the user that total before the line that sends it.
@@ -317,7 +324,7 @@ replaces the base image's line for it and releases the other two.
 Keep a line only when you can name why:
 
 - **A pack's own docs demand a version**, and nothing else supplies it.
-- **A named failure below tells you to.**
+- **A named failure in the recovery table tells you to.**
 
 Then three rules for anything you do keep:
 
@@ -389,9 +396,17 @@ The transitive answer needs one. `uv` is usually already in the install:
 ```
 
 `<py>` is the base image's python, which `comfy build base-images` names.
-Read it rather than assuming; the catalog moves. A
+Read it rather than assuming; the catalog moves. That command needs the user
+signed in, and so does the cut, so this is the point to sign in. If they would
+rather not yet, resolve against the install's own Python and say in the
+disclosure that the build's Python is unconfirmed. A
 refusal to resolve is the clearest possible finding: the error names both sides.
 Plain `pip` cannot do this reliably for another platform, so do not force it.
+
+**A warning is a finding too.** `uv` reporting that a package has no extra by
+the name a pack asked for, say `[ffmpeg]` on a pinned wheel, corroborates that
+the pin is old enough to have moved on. Read warnings, do not only read the exit
+status.
 
 **A clean resolve is not an all-clear.** The ceiling case satisfies every
 constraint: the six-pack install that failed resolves to `numpy==2.5.2` with
@@ -425,7 +440,9 @@ Say all of this, in plain words, and wait for a yes:
 - **What it takes**: any upload, then a build of several minutes.
 - **What a failure means**: a fix and another build, and that you stop after
   three.
-- **The policy.** Say that the release will record no restriction on which
+- **The policy, which any definition may set** with the two keys shaped as
+  they are under *Confirm, then write the definition*, whichever path produced
+  it. Say that the release will record no restriction on which
   models or partner nodes it permits, and that the record cannot be changed after
   the cut. Ask whether to leave it open or to write down the models and nodes
   they use.
