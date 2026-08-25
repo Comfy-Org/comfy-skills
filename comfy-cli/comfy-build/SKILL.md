@@ -441,7 +441,7 @@ cat declared.txt
 **`requirements.txt` is the only file the build reads.** It resolves ComfyUI's
 own plus one per pack, so a dependency declared only in a `pyproject.toml` is
 never installed on its account, and a pyproject constraint you find on disk is
-not one the build applies — one real pack asked for a bare `timm` in
+not one the build applies: one real pack asked for a bare `timm` in
 `requirements.txt` and `timm==0.6.13` in its `pyproject.toml`. A pack shipping
 no `requirements.txt` declares nothing and gets whatever the others pulled in,
 which is the shape behind `declared custom nodes failed to import` naming a
