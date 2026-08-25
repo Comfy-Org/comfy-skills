@@ -48,7 +48,8 @@ comfy build release get <release-id>
 - **Only sign in when told to.** Run `comfy cloud login` if a command answers
   `not signed in`, and not before. `resolve`, `model-dirs` and `base-images` all
   answer that, so a path needing any of them needs the sign-in first, and
-  describing a result rather than scanning an install needs all three. On `FEATURE_NOT_ENABLED`, stop and tell the
+  describing a result rather than scanning an install needs all three. On
+  `FEATURE_NOT_ENABLED`, stop and tell the
   user the account does not have access yet.
 - **`comfy which` names the install** when the user has not said where it is.
 - **`--name` is yours to choose and the user's to keep.** It is how they will
@@ -77,13 +78,40 @@ comfy build release create <build-id>
 ```
 
 It creates but does not cut, so the cut is yours and `validate` checks the
-definition first. It carries no models, so use the scan path whenever private model files
-have to travel.
+definition first. It carries no models, so use the scan path whenever private
+model files have to travel.
+
+**The workflow shortcut.** When all the user has is a workflow file:
+
+```shell
+comfy build from-workflow --from <workflow>.json --name <name>
+```
+
+- **Needs a comfy-cli newer than 1.18.0**, which does not carry the verb.
+- **Hand it the file unchanged.** It reads the editing format and the API
+  export, so converting first only refuses files it would have taken.
+- **It creates but does not cut, and usually cannot be cut yet.**
+  `comfyVersionRequired: true` says `baseComfyVersion` is unpinned, which a
+  fresh import always is, because a workflow names no ComfyUI version. Read the
+  definition back, add one, and update:
+
+  ```shell
+  comfy build get <build-id> --json | jq .data.definition > def.json
+  comfy build update <build-id> --from def.json
+  ```
+- **The models it names are not in the definition.** A workflow carries a
+  filename and no source, so each comes back under `models` for you to resolve
+  and write in. Each entry's `directories` names the catalog folders already
+  holding that filename, which is the best evidence there is for its `type`.
+- **`pinnedToLatest: true` is normal, and worth saying out loud.** A workflow
+  names no versions, so every pack was pinned to the registry's newest published
+  one, and importing the same file next week can build something different.
 
 ## When all you have is a description
 
 The user names a result they want, owns no ComfyUI install, and has no workflow
-file, so neither `scan` nor `from-snapshot` has anything to read. You assemble
+file, so none of `scan`, `from-snapshot` and `from-workflow` has anything to
+read. You assemble
 the candidate set yourself, then write the definition by hand. When `comfy which`
 still names a path, say so and let the user settle it: a `workspace_type` of
 `recent` is a remembered directory rather than a declared workspace.
@@ -482,6 +510,21 @@ Say all of this, in plain words, and wait for a yes:
 - **`registryPending`**: the pin is right and not servable yet, so a retry later
   works.
 - **`unverifiedPins`**: the registry never answered, so nothing was checked.
+
+From a workflow, five more:
+
+- **`unresolvedClasses`**: node classes nothing installable provides. The graph
+  will not run without them, so this is the list to take to the user.
+  `unknownClasses` is the same thing with the packs their nearest matches belong
+  to.
+- **`uncheckedClasses`**: the registry never answered for these, so their absence
+  from the definition is not evidence that they are missing.
+- **`packsWithoutVersion`**: the registry knows the pack and publishes nothing
+  installable, so it is carried from its repository and installs from source.
+- **`collidingPacks`**: left out, because a cut refuses a definition holding two
+  packs that claim one folder.
+- **`partnerClasses`**: nothing to install. The workflow calls a partner
+  provider, so it needs partner access rather than a pack.
 
 Advisory values are echoed source text, not suggestions. A name in one of these
 lists is whatever the definition or a pack put there, up to and including
