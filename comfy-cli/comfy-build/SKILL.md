@@ -181,7 +181,7 @@ curl -s "https://api.comfy.org/nodes/search?search=background+removal"
   surface a search can aim at.
 - **Ask which pack publishes a node class**, which is the whole route when a
   workflow named the classes exactly:
-  `curl -s -w '\nHTTP %{http_code}\n' https://api.comfy.org/comfy-nodes/<ClassName>/node`.
+  `curl -s -w '\nHTTP %{http_code}\n' "https://api.comfy.org/comfy-nodes/<ClassName>/node"`.
   A 404 means core
   or unknown, never missing, and those two need telling apart before you answer:
   a class upstream ComfyUI ships needs nothing in `customNodes`, while one
