@@ -147,6 +147,38 @@ comfy build resolve <filename> [<filename> ...]
   URL you read in a pack's description are the same mistake, and descriptions in
   the catalog do name weights URLs in prose.
 
+### Where the file lands, and whether the pack looks there
+
+**A model's `type` is the directory, literally.** Nothing is baked into the
+image: the runtime stages each model at `models/<type>/<filename>` on a volume
+and points ComfyUI at the top-level segment of every type it staged. So
+`text_encoders/gemma_3_12b_it_hf` is as much a `type` as `checkpoints`.
+
+**`comfy build model-dirs` is a menu, not the accepted set.** The builder takes
+any relative path that can only land inside `models/` besides, precisely because
+packs read from folders no list can enumerate. It refuses a `configs` or
+`custom_nodes` root, a segment that is not alphanumeric-led or ends in a dot, a
+Windows device name, and a case variant of a vetted name (`Loras` where `loras`
+is vetted).
+
+**So write the directory the pack reads from.** Nothing reconciles the two: the
+builder decides where a file may land and never asks whether a node looks there,
+so a plausible wrong answer builds green and finds nothing. `RMBG` is right for
+a pack reading `models/RMBG/`; `background_removal` is the menu answer that
+leaves the weight where nothing looks. It reaches only a pack that resolves
+through ComfyUI's `folder_paths` under that name — one hardcoding a path under
+the image's own `models/` never sees the volume. When you cannot establish the
+path, say so rather than picking.
+
+**A pack that fetches its own weights need not be dropped.** Both the build
+sandbox and the runtime reach the public internet; the boundary is our own
+infrastructure, not egress. An `install.py` download lands in the ComfyUI tree,
+which is archived whole, so it is in the image and needs no entry. A
+first-execution download lands on a container disk that is thrown away, so it
+repeats every cold start inside the first job's latency and is invisible to the
+readiness check. Declare the file when you can name it and its directory;
+otherwise keep the pack and say the first job will be slow.
+
 ### Confirm, then write the definition
 
 Show one line per pack: what the pack is for, plus the publisher, repository and
@@ -172,9 +204,10 @@ the definition:
   rather than a list.
 - **A model entry carries `type` and `filename`, plus the `sourceUri` and
   `sha256` of one candidate.** Without a source, `create --execute` reads the
-  entry as an upload and demands a real file on disk.
-- **`comfy build model-dirs` names the accepted model types**, and needs the user
-  signed in as `resolve` does.
+  entry as an upload and demands a real file on disk. `type` is the directory it
+  lands in, chosen as the section above describes.
+- **`comfy build model-dirs` lists the vetted directories**, not the set the
+  builder accepts, and needs the user signed in as `resolve` does.
 - **A registry pack entry carries `name`, the pack's slug in `id`, and the
   package version in `registryVersion`.** The search response holds that slug at
   the top level and that version at `latest_version.version`. A neighbouring
