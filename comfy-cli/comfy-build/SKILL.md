@@ -249,7 +249,7 @@ cuts anyway. Every pack here is your inference, so tell the user when a cut went
 out unchecked rather than letting a green build read as confirmation.
 
 A refusal at `--execute` still leaves the build created, so repair the definition
-with `comfy build update <id>` rather than creating a second build. That yes
+with `comfy build update <build-id>` rather than creating a second build. That yes
 covered the set, not the whole disclosure: read "Before you cut" below first.
 Only then:
 
@@ -325,7 +325,13 @@ Then three rules for anything you do keep:
   other, so pin both, to versions released for each other.
 - **Two packages providing one import are one axis too.** `opencv-python` and
   `opencv-python-headless` both install `cv2`, so pin both to the same version
-  number. This is the repair for a ceiling one of them carries.
+  number, and this is the repair for a ceiling one of them carries. Resolve the
+  competing names by themselves to get that number rather than recalling one:
+
+  ```shell
+  printf 'opencv-python\nopencv-python-headless\n' > pair.txt
+  <install>/.venv/bin/uv pip compile pair.txt --python-version <py> --python-platform linux
+  ```
 - **An override forces a version, it never adds a package.** Pinning something
   nothing requires installs nothing.
 
