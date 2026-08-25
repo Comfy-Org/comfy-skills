@@ -102,10 +102,9 @@ comfy --json build from-workflow --from <workflow>.json --name <name>
   update run first destroys it with no way back but a fresh import. Take the
   `--json` output to a file and work from that. Pretty mode prints a summary
   only, capped at eight names per line.
-- **It creates but does not cut, and usually cannot be cut yet.**
-  `comfyVersionRequired: true` says `baseComfyVersion` is unpinned, which a
-  fresh import always is, because a workflow names no ComfyUI version. Add one,
-  then cut:
+- **It creates but does not cut, and cannot be cut until `baseComfyVersion` is
+  set.** A workflow names no ComfyUI version, so a fresh import always comes
+  back with `comfyVersionRequired: true`. Add one, then cut:
 
   ```shell
   comfy --json build get <build-id> | jq .data.definition > def.json
@@ -182,7 +181,8 @@ curl -s "https://api.comfy.org/nodes/search?search=background+removal"
   surface a search can aim at.
 - **Ask which pack publishes a node class**, which is the whole route when a
   workflow named the classes exactly:
-  `curl -s https://api.comfy.org/comfy-nodes/<ClassName>/node`. A 404 means core
+  `curl -s -w '\nHTTP %{http_code}\n' https://api.comfy.org/comfy-nodes/<ClassName>/node`.
+  A 404 means core
   or unknown, never missing, and those two need telling apart before you answer:
   a class upstream ComfyUI ships needs nothing in `customNodes`, while one
   nothing ships is a graph that will not run. Check the class against the
@@ -244,8 +244,10 @@ resolves and the files it checks for. When you cannot establish either, say so
 rather than picking.
 
 **A pack that fetches its own weights need not be dropped**, and when it
-fetches is what matters. A pack that downloads during its install step has
-the file in the built environment already, so there is nothing to declare. A
+fetches is what matters. A pack that downloads during its install step usually
+has the file in the built environment already, so there is nothing to declare.
+That holds only for what it writes inside ComfyUI's own tree: a pack that writes
+to an absolute path of its own is not carried, and fetches again at run time. A
 pack that downloads on first execution fetches it again whenever the environment
 starts cold, inside that first run. Declaring what it wants is what stops that,
 so read the pack for the file it looks for and the directory it looks in, and
@@ -367,8 +369,12 @@ you what to write instead:
 curl -s "https://api.comfy.org/nodes/search?search=<id>"
 ```
 
-`total: 0` means nothing publishes it. Search the pack's real name and take the
-slug and `latest_version.version` from there. Correcting a wrong id, and
+`total: 0` means nothing publishes it. Search the pack's real name, and read
+the whole page rather than the first row: a real search for `comfyui_fill-nodes`
+returns two, and one for the WAS suite returns three, including a different
+publisher's fork with more downloads. Take the slug and `latest_version.version`
+only from a row whose `repository` is the pack you scanned. When two rows could
+both be it, that choice is the user's. Correcting a wrong id, and
 removing a `local` pack, are the two edits to a source you may make; leave the
 rest as `scan` wrote them.
 
@@ -617,7 +623,7 @@ conflict shows. `validate` and `bake` come after both.
 | `freeze: ... custom node "<name>"` | That pack's pin names nothing installable. Correct its `registryVersion` against a registry search, or drop the pack. |
 | `freeze: ... blob <id> not found in workspace` | The `blobId` is wrong, or from another workspace. Upload again and take the id from `blob upload`. |
 | `freeze: ... pin ComfyUI "<ref>"` | `baseComfyVersion` names a ref upstream ComfyUI cannot resolve. Take a real tag. |
-| `assemble: ...` `numpy.core.multiarray failed to import`, with `_ARRAY_API not found` above it | A binary built against NumPy 1, not a version disagreement. Pin the two packages providing the failing import to one current version. Never pin `numpy` down to suit the old wheel: core declares `numpy>=1.25.0`. |
+| `assemble: ...` `numpy.core.multiarray failed to import`, with `_ARRAY_API not found` above it | A binary built against NumPy 1, not a version disagreement. Read the traceback for the module that failed to import, find the packages that provide it, and pin those to one current version. Never pin `numpy` down to suit the old wheel: core declares `numpy>=1.25.0`. |
 | the same, with no `_ARRAY_API` line | `numpy` and `scipy` mismatched. Pin both, to versions released for each other. |
 | `no attribute 'long'`, `scipy` in the trace | The same pair, mismatched. Fix both, not one. |
 | `assemble: ComfyUI did not start`, torch in the trace | Remove every torch pin. The build owns that stack. |
@@ -633,7 +639,12 @@ user the lines, and cut nothing.
 and builds nothing, because an unchanged definition cuts nothing new. `create --execute`
 also stitches uploaded blob ids into the definition it sent, not into your file,
 so take the current one back before editing:
-`comfy build release get <release-id>` returns it. Then
+
+```shell
+comfy --json build release get <release-id> | jq .data.definition > definition.json
+```
+
+Then
 `comfy build update <build-id> --from definition.json` and
 `comfy build release create <build-id>`.
 
