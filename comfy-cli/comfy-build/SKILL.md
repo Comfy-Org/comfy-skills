@@ -87,10 +87,14 @@ model files have to travel.
 comfy build from-workflow --from <workflow>.json --name <name>
 ```
 
-- **Needs a comfy-cli newer than 1.18.0**, which does not carry the verb. A
-  `404` back from the call means the platform does not serve this path yet, so
-  fall back to assembling the set as *When all you have is a description*
-  describes.
+- **Check for the verb rather than a version.** `comfy build --help` either
+  lists `from-workflow` or does not; 1.18.0 does not carry it, and a CLI run
+  from source reports a version no comparison can use. A `404` back from the
+  call means the platform does not serve this path yet, so fall back to
+  assembling the set as *When all you have is a description* describes.
+- **It creates on the platform, so get the yes first.** There is no preview to
+  run and no `--execute` to withhold: the call itself writes the build. Say what
+  it will create, and wait.
 - **Hand it the file unchanged.** It reads the editing format and the API
   export, so converting first only refuses files it would have taken.
 - **It creates but does not cut, and usually cannot be cut yet.**
@@ -99,22 +103,29 @@ comfy build from-workflow --from <workflow>.json --name <name>
   definition back, add one, and update:
 
   ```shell
-  comfy build get <build-id> --json | jq .data.definition > def.json
+  comfy --json build get <build-id> | jq .data.definition > def.json
   comfy build update <build-id> --from def.json
   ```
-- **The models it names are not in the definition.** A workflow carries a
-  filename and no source, so each comes back under `models` for you to resolve
-  and write in. Each entry's `directories` names the catalog folders already
-  holding that filename, which is the best evidence there is for its `type`.
+
+  `--json` is a root flag, so it goes before `build`, not after `get`.
+- **The models it names are not in the definition, and `status` says what each
+  one needs.** A workflow carries a filename and no source, so every model comes
+  back under `models` instead: `matched` means that exact file is known and needs
+  only a `sourceUri` written in, `suggested` carries a near-miss name to check
+  before you trust it, and `missing` is yours to find. Each entry also names the
+  classes that used it in `usedBy` and the folders holding that filename in
+  `directories`, which together beat the `model-dirs` menu as evidence for its
+  `type`.
 - **`pinnedToLatest: true` is normal, and worth saying out loud.** A workflow
   names no versions, so every pack was pinned to the registry's newest published
   one, and importing the same file next week can build something different.
 
 ## When all you have is a description
 
-The user names a result they want, owns no ComfyUI install, and has no workflow
-file, so none of `scan`, `from-snapshot` and `from-workflow` has anything to
-read. You assemble
+The user names a result they want and owns no ComfyUI install, so `scan` and
+`from-snapshot` have nothing to read. A workflow file sent here by the shortcut
+above arrives at the same place, one step ahead: it names its node classes
+exactly, so start from those rather than from search terms. You assemble
 the candidate set yourself, then write the definition by hand. When `comfy which`
 still names a path, say so and let the user settle it: a `workspace_type` of
 `recent` is a remembered directory rather than a declared workspace.
@@ -157,9 +168,13 @@ curl -s "https://api.comfy.org/nodes/search?search=background+removal"
   whose table is titled "List of All Nodes".
 - **No tag or category search exists**, so description text is the only topic
   surface a search can aim at.
-- **Ask which pack publishes a node class** when the user names one:
-  `curl -s https://api.comfy.org/comfy-nodes/<ClassName>/node`. A core class such
-  as `KSampler` answers 404, so a 404 means core or unknown, never missing.
+- **Ask which pack publishes a node class**, which is the whole route when a
+  workflow named the classes exactly:
+  `curl -s https://api.comfy.org/comfy-nodes/<ClassName>/node`. A 404 means core
+  or unknown, never missing, and those two need telling apart before you answer:
+  a class upstream ComfyUI ships needs nothing in `customNodes`, while one
+  nothing ships is a graph that will not run. Check the class against the
+  ComfyUI ref you are about to pin, and say which of the two you concluded.
 
 ### Check the models
 
