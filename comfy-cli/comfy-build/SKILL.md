@@ -87,7 +87,10 @@ model files have to travel.
 comfy build from-workflow --from <workflow>.json --name <name>
 ```
 
-- **Needs a comfy-cli newer than 1.18.0**, which does not carry the verb.
+- **Needs a comfy-cli newer than 1.18.0**, which does not carry the verb. A
+  `404` back from the call means the platform does not serve this path yet, so
+  fall back to assembling the set as *When all you have is a description*
+  describes.
 - **Hand it the file unchanged.** It reads the editing format and the API
   export, so converting first only refuses files it would have taken.
 - **It creates but does not cut, and usually cannot be cut yet.**
