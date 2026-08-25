@@ -11,7 +11,7 @@ The platform commands here are the `comfy build` group, from
 
 **Needs comfy-cli 1.18.0 or newer.** Earlier versions have no `build` group at
 all, so `comfy build scan` answers `No such command 'build'`. Check with
-`comfy --version` and upgrade before reading further.
+`comfy --version`, and `pip install -U comfy-cli` if it is older.
 
 **A cut is not undoable and a build takes minutes**, so the user hears what is
 about to be sent, and agrees, before anything is created on the platform.
@@ -36,7 +36,8 @@ comfy build create --from definition.json --name <name>
 
 Everything above is offline. `create` without `--execute` prints the exact
 definition that would be sent and what would be uploaded, so read it, decide the
-pins, run the conflict check, tell the user what is going, and get a yes. Only
+pins, run the conflict check that *Predict the conflict* describes for this
+path, tell the user what is going, and get a yes. Only
 then:
 
 ```shell
@@ -45,7 +46,9 @@ comfy build release get <release-id>
 ```
 
 - **Only sign in when told to.** Run `comfy cloud login` if a command answers
-  `not signed in`, and not before. On `FEATURE_NOT_ENABLED`, stop and tell the
+  `not signed in`, and not before. `resolve`, `model-dirs` and `base-images` all
+  answer that, so a path needing any of them needs the sign-in first, and
+  describing a result rather than scanning an install needs all three. On `FEATURE_NOT_ENABLED`, stop and tell the
   user the account does not have access yet.
 - **`comfy which` names the install** when the user has not said where it is.
 - **`--name` is yours to choose and the user's to keep.** It is how they will
@@ -175,16 +178,21 @@ variant of a vetted name (`Loras` where `loras` is vetted).
 each other: `type` decides where the file goes, never whether a node looks
 there, so a plausible wrong answer builds green and finds nothing. `RMBG` is
 right for a pack reading `models/RMBG/`; `background_removal` is the menu answer
-that leaves the weight where nothing looks. Read the pack for the path it
-resolves, and when you cannot establish it, say so rather than picking.
+that leaves the weight where nothing looks. The search response carries the
+pack's `repository`, and reading that repository is how you find the path it
+resolves and the files it checks for. When you cannot establish either, say so
+rather than picking.
 
 **A pack that fetches its own weights need not be dropped**, and when it
 fetches is what matters. A pack that downloads during its install step has
 the file in the built environment already, so there is nothing to declare. A
 pack that downloads on first execution fetches it again whenever the environment
-starts cold, inside that first run, and no declared model covers it. Declare the
-file when you can name it and its directory; otherwise keep the pack and say the
-first run will be slow.
+starts cold, inside that first run. Declaring what it wants is what stops that,
+so read the pack for the file it looks for and the directory it looks in, and
+declare exactly those. **Declare all of them or none:** a pack that checks for
+four files and finds three fetches all four again, so a partial declaration buys
+nothing. When you cannot name the whole set, keep the pack and say the first run
+will be slow.
 
 ### Confirm, then write the definition
 
