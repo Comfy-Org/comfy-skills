@@ -224,14 +224,15 @@ comfy build create --from definition.json --name <name> --execute
 
 ## What the CLI decides, so you do not
 
-- **The pack sources.** `scan` reads each pack's registry id and version, or its
-  git remote and commit.
+- **The pack sources.** `scan` reads each pack's git remote and commit, or the
+  `id` and `registryVersion` its own `pyproject.toml` claims.
 - **The ComfyUI ref**, in the form the builder can resolve.
 - **The base image**, on the Desktop path only. On the scan path the builder
   uses the catalog default, so do not tell the user their Python was matched.
 - **Whether a registry pin exists.** `create --execute` asks before spending the
-  cut and refuses when the builder answers and names a pack it cannot resolve.
-  When the lookup itself fails, the CLI warns and cuts anyway.
+  cut and refuses when the builder answers and cannot place a pack. When the
+  lookup fails, the CLI warns and cuts anyway. **A check that passes says
+  nothing**, so silence is not proof it ran.
 
 **It does not clean your pins.** Whatever is in `pipDependencies` is sent as a
 hard `--override`, torch included. That is the next section, and it is the whole
@@ -239,8 +240,22 @@ job.
 
 **A `local` pack stops the cut**, because uploading a node is not implemented.
 Remove it from `customNodes`, or `comfy build blob upload <zip> --kind
-node_zip` and give the node that `blobId`. That is the one edit to a source you
-may make; leave the rest as `scan` wrote them.
+node_zip` and give the node that `blobId`.
+
+**A scanned registry id is the pack's claim about itself.** `[project] name` is
+whatever the pack wrote, so a fork or a PR build carries a name nothing
+publishes: one real install read `pr-was-node-suite-comfyui-47064894` for
+`was-node-suite-comfyui`. `--execute` refuses on that for free, but only the
+free check tells you what to write instead:
+
+```shell
+curl -s "https://api.comfy.org/nodes/search?search=<id>"
+```
+
+`total: 0` means nothing publishes it. Search the pack's real name and take the
+slug and `latest_version.version` from there. Correcting a wrong id, and
+removing a `local` pack, are the two edits to a source you may make; leave the
+rest as `scan` wrote them.
 
 ## The judgment that is yours: the pins
 
@@ -253,6 +268,11 @@ first build fails.
 **So cut the first build with `pipDependencies` emptied.** The build resolves the
 packs' own requirements against the base image's torch, which is what you want.
 
+**Empty is the default, not a rule that outranks what you can already see.** The
+reading below exists to avoid buying a conflict, and cutting empty after finding
+one buys it anyway. A conflict you can state in a sentence goes into cut one,
+disclosed.
+
 Delete rather than curate: `torch`, `torchvision`, `torchaudio`, `triton`,
 `xformers`, every `nvidia-*`, `comfyui-frontend-package`, `comfyui-manager`,
 `comfyui-embedded-docs`, and any wheel that only exists on your OS (`pywin32`,
@@ -264,10 +284,13 @@ Keep a line only when you can name why:
 - **A pack's own docs demand a version**, and nothing else supplies it.
 - **A named failure below tells you to.**
 
-Then two rules for anything you do keep:
+Then three rules for anything you do keep:
 
 - **`numpy` and `scipy` are one axis.** Pin one and you have chosen for the
   other, so pin both, to versions released for each other.
+- **Two packages providing one import are one axis too.** `opencv-python` and
+  `opencv-python-headless` both install `cv2`, so pin both to the same version
+  number. This is the repair for a ceiling one of them carries.
 - **An override forces a version, it never adds a package.** Pinning something
   nothing requires installs nothing.
 
@@ -288,9 +311,14 @@ cat <install>/requirements.txt <install>/custom_nodes/*/requirements.txt > decla
 cat declared.txt
 ```
 
-Some packs declare their dependencies in `pyproject.toml` instead, and some
-declare none at all, so read those too rather than assuming an empty
-`declared.txt` means nothing to find.
+**`requirements.txt` is the only file the build reads.** It resolves ComfyUI's
+own plus one per pack, so a dependency declared only in a `pyproject.toml` is
+never installed on its account, and a pyproject constraint you find on disk is
+not one the build applies — one real pack asked for a bare `timm` in
+`requirements.txt` and `timm==0.6.13` in its `pyproject.toml`. A pack shipping
+no `requirements.txt` declares nothing and gets whatever the others pulled in,
+which is the shape behind `declared custom nodes failed to import` naming a
+module nothing asked for.
 
 Three shapes in that text are worth a build each:
 
@@ -324,6 +352,11 @@ Read it rather than assuming; the catalog moves. A
 refusal to resolve is the clearest possible finding: the error names both sides.
 Plain `pip` cannot do this reliably for another platform, so do not force it.
 
+**A clean resolve is not an all-clear.** The ceiling case satisfies every
+constraint: the six-pack install that failed resolves to `numpy==2.5.2` with
+`opencv-python-headless==4.7.0.72` without complaint. Take a refusal as a
+finding and a success as nothing learned about the three shapes above.
+
 **When there is no resolver**, offer to install one, and say plainly what it is
 for. If the user would rather not, say the check was the reading above only, and
 that the build is now the first thing that will disagree with you.
@@ -341,8 +374,13 @@ Say all of this, in plain words, and wait for a yes:
 
 - **What is sent**: the list of packs and their sources, and the models, either
   uploaded from the machine or fetched by the builder from each entry's source
-  URL. Give the count, give the upload size from the preview, and offer to list
-  the filenames first.
+  URL. Give the count and the preview's upload size **as an upper bound**: the
+  preview is offline and shows every model as an upload, while `--execute` first
+  asks the builder for public candidates and rewrites a local entry into a fetch
+  when a candidate's sha256 matches the file on disk. Three promised uploads can
+  report `uploaded: 0`. Only the digest decides and the builder re-verifies it,
+  so it is safe, but a user who agreed to send files is owed the sentence. Offer
+  to list the filenames first.
 - **What it takes**: any upload, then a build of several minutes.
 - **The budget**: that a failure means a fix and another build, and that you will
   stop after three.
@@ -356,8 +394,11 @@ Say all of this, in plain words, and wait for a yes:
 - **`notInRegistry`, `unresolvedNodes`**: fatal. Fix the pin or drop the pack.
 - **`collidingNodes`**: a pack was left out because another claimed its folder.
   The build proceeds without it.
-- **`pythonSatisfied: false`**: the build runs on a different Python than the
-  freeze came from.
+- **`pythonSatisfied: false`**: no curated base image matches the scanned
+  Python, so the build runs on the closest one and a pin resolved against your
+  Python may not resolve against the build's. `--execute` says so in words too.
+- **`droppedComfyVersion`**: the ComfyUI ref named is not one the build can use,
+  so none was set. Write one; a definition with no version cannot cut.
 - **`skippedPins`**: normal. The build owns those packages.
 - **`unpinnablePins`**: a package with no PyPI version to write, an editable or a
   direct URL. Not owned by the build, just undeclarable. A pack may still need it.
