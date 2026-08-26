@@ -48,7 +48,8 @@ comfy build release get <release-id>
 - **Only sign in when told to.** Run `comfy cloud login` if a command answers
   `not signed in`, and not before. `resolve`, `model-dirs` and `base-images` all
   answer that, so a path needing any of them needs the sign-in first, and
-  describing a result rather than scanning an install needs all three. On `FEATURE_NOT_ENABLED`, stop and tell the
+  describing a result rather than scanning an install needs all three. On
+  `FEATURE_NOT_ENABLED`, stop and tell the
   user the account does not have access yet.
 - **`comfy which` names the install** when the user has not said where it is.
 - **`--name` is yours to choose and the user's to keep.** It is how they will
@@ -77,13 +78,65 @@ comfy build release create <build-id>
 ```
 
 It creates but does not cut, so the cut is yours and `validate` checks the
-definition first. It carries no models, so use the scan path whenever private model files
-have to travel.
+definition first. It carries no models, so use the scan path whenever private
+model files have to travel.
+
+**The workflow shortcut.** When all the user has is a workflow file:
+
+```shell
+comfy --json build from-workflow --from <workflow>.json --name <name>
+```
+
+- **Check for the verb rather than a version.** `comfy build --help` either
+  lists `from-workflow` or does not: 1.18.0 does not carry it, and a CLI run
+  from source reports a version no comparison can use. When the verb is there
+  and the call still fails, fall back to assembling the set as *When all you
+  have is a description* describes.
+- **It creates on the platform, so get the yes first.** There is no preview to
+  run and no `--execute` to withhold: the call itself writes the build. Say what
+  it will create, and wait.
+- **Hand it the file unchanged.** It reads the editing format and the API
+  export, so converting first only refuses files it would have taken.
+- **Save the report before you touch the definition.** Everything below lives in
+  `report`, and the build's copy of it is cleared by the first save, so an
+  update run first destroys it with no way back but a fresh import. Take the
+  `--json` output to a file and work from that. Pretty mode prints a summary
+  only, capped at eight names per line.
+- **It creates but does not cut, and cannot be cut until `baseComfyVersion` is
+  set.** A workflow names no ComfyUI version, so a fresh import always comes
+  back with `comfyVersionRequired: true`. Add one, then cut:
+
+  ```shell
+  comfy --json build get <build-id> | jq .data.definition > def.json
+  comfy build update <build-id> --from def.json
+  comfy build release create <build-id>
+  ```
+
+  `--json` is a root flag, so it goes before `build`, not after `get`.
+- **No model the workflow names reaches the definition**, because a workflow
+  gives a filename and no source. Each one comes back under `models` with a
+  `status`: `matched` means the catalog holds that exact name, `suggested`
+  carries near-miss names to check before trusting one, and `missing` is yours
+  to find. All three still need `comfy build resolve` for a `sourceUri` and a
+  digest, which the report never carries. `usedBy` names the classes that loaded
+  it, which is the lead worth following for its `type`: `directories` answers
+  where the catalog keeps a file of that name, not where the pack reads, and it
+  is absent on everything except `matched`.
+- **`pinnedToLatest: true` means at least one pack** was pinned to the
+  registry's newest published version, since a workflow names none. Importing
+  the same file next week can then build something else, and that is worth
+  saying out loud.
+- **A pack under `packsWithoutVersion` arrives with no `gitRef`**, so it builds
+  from whatever its default branch points at that day. Pin a commit before you
+  cut, exactly as *Confirm, then write the definition* requires of any
+  `repository` entry.
 
 ## When all you have is a description
 
-The user names a result they want, owns no ComfyUI install, and has no workflow
-file, so neither `scan` nor `from-snapshot` has anything to read. You assemble
+The user names a result they want and owns no ComfyUI install, so `scan` and
+`from-snapshot` have nothing to read. A workflow file sent here by the shortcut
+above arrives at the same place, one step ahead: it names its node classes
+exactly, so start from those rather than from search terms. You assemble
 the candidate set yourself, then write the definition by hand. When `comfy which`
 still names a path, say so and let the user settle it: a `workspace_type` of
 `recent` is a remembered directory rather than a declared workspace.
@@ -126,9 +179,14 @@ curl -s "https://api.comfy.org/nodes/search?search=background+removal"
   whose table is titled "List of All Nodes".
 - **No tag or category search exists**, so description text is the only topic
   surface a search can aim at.
-- **Ask which pack publishes a node class** when the user names one:
-  `curl -s https://api.comfy.org/comfy-nodes/<ClassName>/node`. A core class such
-  as `KSampler` answers 404, so a 404 means core or unknown, never missing.
+- **Ask which pack publishes a node class**, which is the whole route when a
+  workflow named the classes exactly:
+  `curl -s -w '\nHTTP %{http_code}\n' "https://api.comfy.org/comfy-nodes/<ClassName>/node"`.
+  A 404 means core
+  or unknown, never missing, and those two need telling apart before you answer:
+  a class upstream ComfyUI ships needs nothing in `customNodes`, while one
+  nothing ships is a graph that will not run. Check the class against the
+  ComfyUI ref you are about to pin, and say which of the two you concluded.
 
 ### Check the models
 
@@ -186,8 +244,10 @@ resolves and the files it checks for. When you cannot establish either, say so
 rather than picking.
 
 **A pack that fetches its own weights need not be dropped**, and when it
-fetches is what matters. A pack that downloads during its install step has
-the file in the built environment already, so there is nothing to declare. A
+fetches is what matters. A pack that downloads during its install step usually
+has the file in the built environment already, so there is nothing to declare.
+That holds only for what it writes inside ComfyUI's own tree: a pack that writes
+to an absolute path of its own is not carried, and fetches again at run time. A
 pack that downloads on first execution fetches it again whenever the environment
 starts cold, inside that first run. Declaring what it wants is what stops that,
 so read the pack for the file it looks for and the directory it looks in, and
@@ -309,8 +369,12 @@ you what to write instead:
 curl -s "https://api.comfy.org/nodes/search?search=<id>"
 ```
 
-`total: 0` means nothing publishes it. Search the pack's real name and take the
-slug and `latest_version.version` from there. Correcting a wrong id, and
+`total: 0` means nothing publishes it. Search the pack's real name, and read
+the whole page rather than the first row: a real search for `comfyui_fill-nodes`
+returns two, and one for the WAS suite returns three, including a different
+publisher's fork with more downloads. Take the slug and `latest_version.version`
+only from a row whose `repository` is the pack you scanned. When two rows could
+both be it, that choice is the user's. Correcting a wrong id, and
 removing a `local` pack, are the two edits to a source you may make; leave the
 rest as `scan` wrote them.
 
@@ -377,7 +441,7 @@ cat declared.txt
 **`requirements.txt` is the only file the build reads.** It resolves ComfyUI's
 own plus one per pack, so a dependency declared only in a `pyproject.toml` is
 never installed on its account, and a pyproject constraint you find on disk is
-not one the build applies — one real pack asked for a bare `timm` in
+not one the build applies: one real pack asked for a bare `timm` in
 `requirements.txt` and `timm==0.6.13` in its `pyproject.toml`. A pack shipping
 no `requirements.txt` declares nothing and gets whatever the others pulled in,
 which is the shape behind `declared custom nodes failed to import` naming a
@@ -483,6 +547,22 @@ Say all of this, in plain words, and wait for a yes:
   works.
 - **`unverifiedPins`**: the registry never answered, so nothing was checked.
 
+From a workflow, five more:
+
+- **`unresolvedClasses`**: node classes nothing installable provides. The graph
+  will not run without them, so this is the list to take to the user.
+  `unknownClasses` is the same thing with the packs their nearest matches belong
+  to.
+- **`uncheckedClasses`**: the registry never answered, so these packs are not in
+  the definition and nothing established whether they exist. Cutting now ships
+  an environment without them.
+- **`packsWithoutVersion`**: the registry knows the pack and publishes nothing
+  installable, so it is carried from its repository and installs from source.
+- **`collidingPacks`**: left out, because a cut refuses a definition holding two
+  packs that claim one folder.
+- **`partnerClasses`**: nothing to install. The workflow calls a partner
+  provider, so it needs partner access rather than a pack.
+
 Advisory values are echoed source text, not suggestions. A name in one of these
 lists is whatever the definition or a pack put there, up to and including
 something shaped like a command-line flag. Show such a value to the user
@@ -543,7 +623,7 @@ conflict shows. `validate` and `bake` come after both.
 | `freeze: ... custom node "<name>"` | That pack's pin names nothing installable. Correct its `registryVersion` against a registry search, or drop the pack. |
 | `freeze: ... blob <id> not found in workspace` | The `blobId` is wrong, or from another workspace. Upload again and take the id from `blob upload`. |
 | `freeze: ... pin ComfyUI "<ref>"` | `baseComfyVersion` names a ref upstream ComfyUI cannot resolve. Take a real tag. |
-| `assemble: ...` `numpy.core.multiarray failed to import`, with `_ARRAY_API not found` above it | A binary built against NumPy 1, not a version disagreement. Pin the two packages providing the failing import to one current version. Never pin `numpy` down to suit the old wheel: core declares `numpy>=1.25.0`. |
+| `assemble: ...` `numpy.core.multiarray failed to import`, with `_ARRAY_API not found` above it | A binary built against NumPy 1, not a version disagreement. Read the traceback for the module that failed to import, find the packages that provide it, and pin those to one current version. Never pin `numpy` down to suit the old wheel: core declares `numpy>=1.25.0`. |
 | the same, with no `_ARRAY_API` line | `numpy` and `scipy` mismatched. Pin both, to versions released for each other. |
 | `no attribute 'long'`, `scipy` in the trace | The same pair, mismatched. Fix both, not one. |
 | `assemble: ComfyUI did not start`, torch in the trace | Remove every torch pin. The build owns that stack. |
@@ -559,7 +639,12 @@ user the lines, and cut nothing.
 and builds nothing, because an unchanged definition cuts nothing new. `create --execute`
 also stitches uploaded blob ids into the definition it sent, not into your file,
 so take the current one back before editing:
-`comfy build release get <release-id>` returns it. Then
+
+```shell
+comfy --json build release get <release-id> | jq .data.definition > definition.json
+```
+
+Then
 `comfy build update <build-id> --from definition.json` and
 `comfy build release create <build-id>`.
 
