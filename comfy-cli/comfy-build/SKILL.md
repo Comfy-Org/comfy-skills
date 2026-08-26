@@ -56,7 +56,8 @@ comfy build release get <release-id>
 - **`comfy which` names the install** when the user has not said where it is.
 - **`--name` is yours to choose and the user's to keep.** It is how they will
   find the build later, so propose one from the install or the result they asked
-  for and say it in the disclosure. Omitted, every build is `untitled-build`.
+  for and say it in the disclosure. `create` defaults it to `untitled-build`;
+  `from-workflow` requires it.
 - **`create` without `--execute` is the preview.** It makes no network call and
   prints the exact definition that would be sent plus the upload total. Always
   run it, and show the user that total before the line that sends it.
@@ -111,9 +112,15 @@ comfy --json build from-workflow --from <workflow>.json --name <name>
 
   ```shell
   comfy --json build get <build-id> | jq .data.definition > def.json
+  # add baseComfyVersion, and the models below, to def.json
   comfy build update <build-id> --from def.json
+  comfy build validate <build-id>
   comfy build release create <build-id>
   ```
+
+  **The version alone is not enough to cut something that works.** Add the
+  models in the same edit, or the cut goes green and the graph cannot load its
+  weights. `validate` is the only free check on this path, so run it.
 
   `--json` is a root flag, so it goes before `build`, not after `get`.
 - **An empty `definition` is a real answer, not a failure.** A graph of core
@@ -124,15 +131,18 @@ comfy --json build from-workflow --from <workflow>.json --name <name>
   gives a filename and no source. Each one comes back under `models` with a
   `status`: `matched` means the catalog holds that exact name, `suggested`
   carries near-miss names to check before trusting one, and `missing` is yours
-  to find. All three still need `comfy build resolve` for a `sourceUri` and a
-  digest, which the report never carries. `usedBy` names the classes that loaded
+  to find. All three still need `comfy build resolve` for a `sourceUri`, which
+  the report never carries. Take its `sha256` too when a candidate has one; the
+  entry may go without, and that is an unpinned fetch to say out loud rather
+  than a digest to invent. `usedBy` names the classes that loaded
   it, which is the lead worth following for its `type`: `directories` answers
   where the catalog keeps a file of that name, not where the pack reads, and it
   is absent on everything except `matched`.
 - **`pinnedToLatest: true` means at least one pack** was pinned to the
   registry's newest published version, since a workflow names none. Importing
   the same file next week can then build something else, and that is worth
-  saying out loud.
+  saying out loud. `false` on a graph of core classes means no pack was pinned
+  because none was needed.
 - **A pack under `packsWithoutVersion` arrives with no `gitRef`**, so it builds
   from whatever its default branch points at that day. Pin a commit before you
   cut, exactly as *Confirm, then write the definition* requires of any
@@ -554,7 +564,8 @@ Say all of this, in plain words, and wait for a yes:
   works.
 - **`unverifiedPins`**: the registry never answered, so nothing was checked.
 
-From a workflow, five more:
+From a workflow, five more. **An advisory with nothing to say is absent, not
+empty**, so a missing key is the all-clear and there is no `[]` to find:
 
 - **`unresolvedClasses` stops the run.** Nothing installable provides these
   classes, so no build of any shape makes the graph run. Take the list to the
