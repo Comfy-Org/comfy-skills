@@ -390,10 +390,11 @@ before you cut rather than buying the refusal:
 curl -s "https://api.comfy.org/nodes/search?search=<id>"
 ```
 
-`total: 0` means nothing publishes it. Search the pack's real name, and read
-the whole page rather than the first row: a real search for `comfyui_fill-nodes`
-returns two, and one for the WAS suite returns three, including a different
-publisher's fork with more downloads. Take the slug and `latest_version.version`
+`total: 0` means nothing publishes it. Search the pack's real name as words
+rather than as a slug, since the endpoint matches a run of characters: `was
+node suite` returns three rows including a different publisher's fork with more
+downloads, while the exact slug returns one. Read the whole page rather than the
+first row. Take the slug and `latest_version.version`
 only from a row whose `repository` is the pack you scanned. When two rows could
 both be it, that choice is the user's. Correcting a wrong id, and
 removing a `local` pack, are the two edits to a source you may make; leave the
