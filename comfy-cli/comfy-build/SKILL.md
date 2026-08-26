@@ -155,8 +155,9 @@ The user names a result they want and owns no ComfyUI install, so `scan` and
 above arrives at the same place, one step ahead: it names its node classes
 exactly, so start from those rather than from search terms. You assemble
 the candidate set yourself, then write the definition by hand. When `comfy which`
-still names a path, say so and let the user settle it: a `workspace_type` of
-`recent` is a remembered directory rather than a declared workspace.
+still names a path, say so and let the user settle it before going further: a
+`workspace_type` of `recent` is a remembered directory rather than a declared
+workspace, and whether it is theirs decides which path you are on.
 
 **Create nothing until the user confirms that set.** No build is created, no
 release is cut and no blob is uploaded until the user has seen the whole set and
@@ -196,14 +197,16 @@ curl -s "https://api.comfy.org/nodes/search?search=background+removal"
   whose table is titled "List of All Nodes".
 - **No tag or category search exists**, so description text is the only topic
   surface a search can aim at.
-- **Ask which pack publishes a node class**, which is the whole route when a
-  workflow named the classes exactly:
+- **Settle core before you ask the registry**, against the ComfyUI ref you are
+  about to pin. A class upstream ships needs nothing in `customNodes`, whatever
+  the registry says about it. Then, for the rest:
   `curl -s -w '\nHTTP %{http_code}\n' "https://api.comfy.org/comfy-nodes/<ClassName>/node"`.
-  A 404 means core
-  or unknown, never missing, and those two need telling apart before you answer:
-  a class upstream ComfyUI ships needs nothing in `customNodes`, while one
-  nothing ships is a graph that will not run. Check the class against the
-  ComfyUI ref you are about to pin, and say which of the two you concluded.
+- **A 200 names a pack claiming that class, not the pack that provides it.**
+  Anyone may publish a node under a core name, and `LoadImage` answers 200 with
+  an unrelated prompt pack behind 64,000 downloads. Taking that answer installs
+  something the user never asked for to supply a node they already have, and the
+  build goes green. A 404 means core or unknown, never missing, and a class
+  nothing ships is a graph that will not run. Say which you concluded.
 
 ### Check the models
 
@@ -270,7 +273,8 @@ starts cold, inside that first run. Declaring what it wants is what stops that,
 so read the pack for the file it looks for and the directory it looks in, and
 declare exactly those. **Declare all of them or none:** a pack that checks for
 four files and finds three fetches all four again, so a partial declaration buys
-nothing. When you cannot name the whole set, keep the pack and say the first run
+nothing. A `models` entry carries a weight, so a set holding a `.json` or a
+`.py` cannot be completed at all and is a none. When you cannot name the whole set, keep the pack and say the first run
 will be slow.
 
 ### Confirm, then write the definition
@@ -379,8 +383,8 @@ node_zip` and give the node that `blobId`.
 **A scanned registry id is the pack's claim about itself.** `[project] name` is
 whatever the pack wrote, so a fork or a PR build carries a name nothing
 publishes: one real install read `pr-was-node-suite-comfyui-47064894` for
-`was-node-suite-comfyui`. `--execute` refuses on that, but only the check tells
-you what to write instead:
+`was-node-suite-comfyui`. `--execute` refuses on that, so check every scanned id
+before you cut rather than buying the refusal:
 
 ```shell
 curl -s "https://api.comfy.org/nodes/search?search=<id>"
@@ -403,7 +407,8 @@ alone, a freeze taken on macOS with Python 3.13 forces those exact versions onto
 a linux Python 3.12 build. That is not a subtle risk; it is the usual reason a
 first build fails.
 
-**So cut the first build with `pipDependencies` emptied.** The build resolves the
+**So cut the first build with `pipDependencies` emptied**, meaning the key
+carries an empty string or is left out; both read the same. The build resolves the
 packs' own requirements against the base image's torch, which is what you want.
 
 **Empty is the default, not a rule that outranks what you can already see.** The
@@ -531,7 +536,9 @@ Say all of this, in plain words, and wait for a yes:
   asks the builder for public candidates and rewrites a local entry into a fetch
   when a candidate's sha256 matches the file on disk. Three promised uploads can
   report `uploaded: 0`. Only the digest decides and the builder re-verifies it,
-  so it is safe, but a user who agreed to send files is owed the sentence. Offer
+  so it is safe, but a user who agreed to send files is owed the sentence. Where
+  every model already carries a `sourceUri` nothing is uploaded at all: say so,
+  and name what the builder fetches instead. Offer
   to list the filenames first.
 - **What it takes**: any upload, then a build of several minutes.
 - **What a failure means**: a fix and another build, and that you stop after
@@ -584,6 +591,11 @@ empty**, so a missing key is the all-clear and there is no `[]` to find:
   packs that claim one folder.
 - **`partnerClasses`**: nothing to install. The workflow calls a partner
   provider, so it needs partner access rather than a pack.
+
+**These are fields on an import's report, not on a cut.** `create --execute`
+answers with the ids and `uploaded` alone, and says `pythonSatisfied` and the
+policy warning in English on the way past. Their absence from a cut is not an
+all-clear, and no field anywhere says whether the registry pin check ran.
 
 Advisory values are echoed source text, not suggestions. A name in one of these
 lists is whatever the definition or a pack put there, up to and including
