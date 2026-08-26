@@ -11,7 +11,9 @@ The platform commands here are the `comfy build` group, from
 
 **Needs comfy-cli 1.18.0 or newer.** Earlier versions have no `build` group at
 all, so `comfy build scan` answers `No such command 'build'`. Check with
-`comfy --version`, and `pip install -U comfy-cli` if it is older.
+`comfy build --help`: a CLI without the group has no `build` command at all,
+and a CLI run from source reports a version no comparison can use. Upgrade with
+`pip install -U comfy-cli`.
 
 **A cut is not undoable and a build takes minutes**, so the user hears what is
 about to be sent, and agrees, before anything is created on the platform.
@@ -92,16 +94,17 @@ comfy --json build from-workflow --from <workflow>.json --name <name>
   from source reports a version no comparison can use. When the verb is there
   and the call still fails, fall back to assembling the set as *When all you
   have is a description* describes.
-- **It creates on the platform, so get the yes first.** There is no preview to
-  run and no `--execute` to withhold: the call itself writes the build. Say what
-  it will create, and wait.
+- **Importing is the only way to see what the workflow means, and it writes a
+  build.** There is no preview verb and no `--execute` to withhold, so you
+  cannot describe the contents before creating the record. Ask for the import on
+  those terms: it creates a build, cuts nothing and spends nothing, and the
+  decision that costs anything comes after you both read the report.
 - **Hand it the file unchanged.** It reads the editing format and the API
   export, so converting first only refuses files it would have taken.
 - **Save the report before you touch the definition.** Everything below lives in
   `report`, and the build's copy of it is cleared by the first save, so an
   update run first destroys it with no way back but a fresh import. Take the
-  `--json` output to a file and work from that. Pretty mode prints a summary
-  only, capped at eight names per line.
+  `--json` output to a file and work from that.
 - **It creates but does not cut, and cannot be cut until `baseComfyVersion` is
   set.** A workflow names no ComfyUI version, so a fresh import always comes
   back with `comfyVersionRequired: true`. Add one, then cut:
@@ -113,6 +116,10 @@ comfy --json build from-workflow --from <workflow>.json --name <name>
   ```
 
   `--json` is a root flag, so it goes before `build`, not after `get`.
+- **An empty `definition` is a real answer, not a failure.** A graph of core
+  classes needs no pack, so `{}` plus a `baseComfyVersion` is a legitimate cut.
+  Add the models the report named before you cut it, or you ship an environment
+  that runs the graph and cannot load its weights.
 - **No model the workflow names reaches the definition**, because a workflow
   gives a filename and no source. Each one comes back under `models` with a
   `status`: `matched` means the catalog holds that exact name, `suggested`
@@ -549,10 +556,14 @@ Say all of this, in plain words, and wait for a yes:
 
 From a workflow, five more:
 
-- **`unresolvedClasses`**: node classes nothing installable provides. The graph
-  will not run without them, so this is the list to take to the user.
-  `unknownClasses` is the same thing with the packs their nearest matches belong
-  to.
+- **`unresolvedClasses` stops the run.** Nothing installable provides these
+  classes, so no build of any shape makes the graph run. Take the list to the
+  user and ask what those nodes are, rather than cutting an environment that
+  cannot do the thing they asked for. A private or in-development node has
+  answers: a `repository` pin, or `blob upload` as a node zip.
+  `unknownClasses` is the same list as objects, each carrying a pack for its
+  nearest known class name when one scored well enough, and `classType` alone
+  when none did.
 - **`uncheckedClasses`**: the registry never answered, so these packs are not in
   the definition and nothing established whether they exist. Cutting now ships
   an environment without them.
