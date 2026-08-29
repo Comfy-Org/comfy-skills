@@ -15,7 +15,7 @@
     {
       "name": "comfy-local",
       "source": "./claude-code-local",
-      "description": "Comfy local in Claude Code: the stdio MCP connection to your own ComfyUI (via comfy-cli) plus slash commands for generating images and video and searching your live templates, models, and nodes.",
+      "description": "Comfy local in Claude Code: the stdio MCP connection to your own ComfyUI (via comfy-cli) plus slash commands for generating images and video and searching the built-in template gallery and your live models and nodes.",
       "homepage": "https://github.com/Comfy-Org/comfy-mcp"
     }
   ]

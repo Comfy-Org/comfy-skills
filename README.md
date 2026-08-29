@@ -27,12 +27,12 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 
 The **`comfy-local`** plugin does the same for [`comfy-mcp`](https://github.com/Comfy-Org/comfy-mcp), the stdio MCP server that drives **your own** ComfyUI install through `comfy-cli` — no cloud GPU, local execution:
 
-```
+```text
 /plugin marketplace add Comfy-Org/comfy-skills
 /plugin install comfy-local@comfy-skills
 ```
 
-It launches `comfy-mcp` on demand via `uvx comfy-mcp`, so it needs `comfy-cli` installed and a Python environment `uvx` can use; no separate sign-in step beyond what `comfy-cli` itself requires. `comfy-mcp` ships on PyPI as `comfy-mcp`. Commands are namespaced the same way, e.g. `/comfy-local:generate-image`, `/comfy-local:search-nodes`, `/comfy-local:help`.
+It launches `comfy-mcp` on demand via `uvx comfy-mcp`, so it needs [`uv`](https://docs.astral.sh/uv/) (for `uvx`) and `comfy-cli` installed; no separate sign-in step beyond what `comfy-cli` itself requires. `comfy-mcp` ships on PyPI as [`comfy-mcp`](https://pypi.org/project/comfy-mcp/) — this plugin was tested against `comfy-mcp` 0.10.0; `uvx` resolves the latest release, so pin with `uvx comfy-mcp==0.10.0` in the plugin's `mcpServers` if you need to freeze it. Commands are namespaced the same way, e.g. `/comfy-local:generate-image`, `/comfy-local:search-nodes`, `/comfy-local:help`.
 
 `comfy-cloud` and `comfy-local` can both be installed at once — they talk to different servers (hosted vs. your machine) and their commands live under different namespaces.
 

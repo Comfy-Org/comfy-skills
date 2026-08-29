@@ -11,7 +11,7 @@ Explain in a friendly, concise way:
 - Generate images for free, straight from a text prompt, on your own GPU
 - Generate video, image, audio, or other output from the built-in template gallery, or a hand-built workflow
 - Run PAID partner models (Flux Pro, Kling, Nano Banana, DALL-E, …) when you want hosted quality or speed instead of local compute — always asks before spending
-- Search the templates, models, and nodes your OWN install actually has — not a generic catalog
+- Search the built-in template gallery, and the models and nodes your OWN install actually has — model and node search is live against your install; template search is the bundled gallery
 - Validate a workflow against your live ComfyUI before running it, and get a normalized diagnosis when one fails
 - Manage your local ComfyUI: launch, stop, restart, check GPU/VRAM, tail logs, install a missing custom node pack, update ComfyUI, or switch versions
 - Upload input files, download models, and fetch a job's output files
@@ -30,7 +30,7 @@ comfy-mcp runs as a local process (started via `uvx comfy-mcp`) and drives `comf
 
 **Tips:**
 
-- Free templates and `generate_image` never ask for spend confirmation; partner models always do — say yes only when you actually want to pay
+- Templates without partner/API nodes and `generate_image` never ask for spend confirmation; a gallery template that contains a partner/API node spends credits like any partner model and always asks first — say yes only when you actually want to pay
 - If a workflow won't run, `validate_workflow` usually says exactly what's missing (a model, a node, an input)
 - A missing custom node? `workflow_deps` maps it to the pack, then `install_node` + `restart_comfyui` picks it up
 - Point `COMFY_PROJECT` at a directory to anchor relative paths, or check `/comfy-local:project-status`
