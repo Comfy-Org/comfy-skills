@@ -51,8 +51,24 @@ read `name` out of the JSON it prints.
 
 ## Step 3 — Generate speech
 
-Run the Chatterbox zero-shot voice-cloning template, pointing `LoadAudio` at the uploaded
-reference and `FL_ChatterboxTTS` at the line to speak:
+Pick the Chatterbox template for the job: `audio-chatterbox_tts` for one voice speaking
+English, `audio-chatterbox_tts_multilingual` for a non-English target language (it adds a
+`language` input), or `audio-chatterbox_tts_dialog` for multi-speaker dialogue from a single
+script (it takes a `dialog_text` script and one `LoadAudio` reference per speaker).
+
+Resolve that template's node ids before writing any override:
+
+```
+get_template_schema(template_id: "<the template name>")
+```
+
+None of these templates exposes a subgraph, so `slots` comes back empty and the `nodes` list
+is the contract: `input_overrides` is keyed by the node `id`s it returns. Find the
+`LoadAudio` node (its `audio` input takes the `name` from `upload_file`) and the Chatterbox
+TTS node (its `text` — or `dialog_text` — input takes the line to speak, alongside `seed`,
+`exaggeration`, `cfg_weight` and `temperature`). The ids differ between the three templates
+and can move when a template is republished, so take them from the schema you just fetched,
+not from memory. As of this writing the single-voice template resolves to:
 
 ```
 run_template(
@@ -72,13 +88,11 @@ mapped` on this template. That is the node's `audioUI` preview widget and is **n
 the job runs as submitted. Do not cancel or resubmit over it.
 
 **For more than one line, call `submit_batch` once** with a `run_template` item per line
-rather than running this template N times — one spend confirmation, one round of polling,
-and `get_batch_output` collects them all. Vary `seed` per line so repeated phrases do not
-come out identically stamped.
-
-For a non-English target language, use `audio-chatterbox_tts_multilingual` instead and set
-its language input. For multi-speaker dialogue from a single script, use
-`audio-chatterbox_tts_dialog`.
+rather than running this template N times — one spend confirmation, then `wait_for_batch`
+until every job is terminal (call it again if it returns `timed_out: true`), then
+`get_batch_output` collects them all. Calling `get_batch_output` before the batch is terminal
+returns only the outputs that are ready so far. Vary `seed` per line so repeated phrases do
+not come out identically stamped.
 
 ## Step 4 — Tuning
 
