@@ -24,4 +24,6 @@ Follow these steps exactly:
 
 9. Display the result to the user. Note that the output is a PNG with transparency if background was removed (not replaced).
 
+10. **If the user asks for a different strength/model** (e.g. a different removal model or mask threshold), rerun via `submit_workflow` with `from_prompt_id` set to the prompt_id of the run being adjusted and `input_overrides` holding ONLY the changed inputs ({nodeId: {inputName: value}}); do not re-upload the source and do not rebuild the workflow. If you do not know the node id, call `get_job_status` with `include_workflow: true` on that prompt_id first. Then continue from step 7.
+
 If any step fails, show the error clearly. If background removal nodes aren't available, suggest using an inpainting approach as a fallback.

@@ -24,4 +24,6 @@ Follow these steps exactly:
 
 9. Display the result to the user. Mention the output resolution compared to the input if known.
 
+10. **If the user asks for a different strength/model** (e.g. a different upscaler model or scale factor), rerun via `submit_workflow` with `from_prompt_id` set to the prompt_id of the run being adjusted and `input_overrides` holding ONLY the changed inputs ({nodeId: {inputName: value}}); do not re-upload the source and do not rebuild the workflow. If you do not know the node id, call `get_job_status` with `include_workflow: true` on that prompt_id first. Then continue from step 7.
+
 If any step fails, show the error clearly. Common issues: input image too large for GPU memory (suggest downscaling first or using a tile-based upscaler like UltimateSDUpscale).
