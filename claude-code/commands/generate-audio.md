@@ -30,4 +30,6 @@ Follow these steps exactly:
 
 8. Tell the user where the audio file was saved and how to play it. Audio outputs are saved to disk but not previewed inline.
 
+9. **If the user asks to adjust the result** (different seed, prompt wording, steps/cfg, resolution, a different reference image) rather than a new subject: do NOT rebuild the workflow and do NOT re-send the JSON. Call `submit_workflow` with `from_prompt_id` set to the prompt_id of the run being adjusted and `input_overrides` holding ONLY the changed inputs ({nodeId: {inputName: value}}). If you do not know the node id, call `get_job_status` with `include_workflow: true` on that prompt_id first. A new reference image still goes through `upload_file` first; override the loader node's input with the returned filename. Then continue from step 6. If the result came from Step 0's `partner_generate` rather than a submitted workflow, there is no workflow to rerun: call `partner_generate` again with the changed fields. If the user wants the AUDIO itself edited (e.g. "keep this exact clip, just add an echo") rather than the workflow's inputs changed, use `use_previous_output` / `partner_generate medias[]` instead.
+
 If any step fails, show the error clearly. Audio generation support in ComfyUI is newer than image generation, so fewer templates and models may be available.
