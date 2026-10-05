@@ -15,7 +15,7 @@ Approach: prefer a ready-made template over hand-building, and discover the curr
 
 3. If the user provides a reference image (image-to-3D), `upload_file` it first.
 
-4. Build a ComfyUI API-format workflow JSON, or edit the cloned template. A 3D workflow generally chains an input, a 3D generation or reconstruction node, and a 3D save/output node.
+4. Build a ComfyUI API-format workflow JSON, or edit the cloned template. A 3D workflow generally chains an input, a 3D generation or reconstruction node, and a 3D save/output node. Give EVERY node a `_meta.title` that names its role in plain words (e.g. "Load driving video", "Remove background", "Overlay graphic 1", "Save video"). The canvas shows these titles; without them the user sees only class names.
 
 5. **Validate inputs and outputs before submitting.** Confirm the workflow has:
    - at least one input node carrying the user's intent (a text prompt node, or LoadImage for image-to-3D), and
@@ -30,5 +30,7 @@ Approach: prefer a ready-made template over hand-building, and discover the curr
 8. Call `get_output` to retrieve the result. Pass a short `description` (for example "red sports car 3d model") so the saved file gets a descriptive name.
 
 9. Tell the user where the files were saved. 3D outputs may include mesh files (.obj, .glb), textures, or rendered preview images.
+
+10. If the user asked to BUILD or CREATE a workflow (not just for an output), after the run completes call `save_workflow` with the same JSON and a descriptive `name`, then `get_workflow_canvas_url` with the returned workflow id, and give the user that link. Mention that the saved layout is auto-generated and may need tidying. If you ran a subgraph template instead, tell the user the canvas shows one collapsed subgraph node and how to open it (double-click the node body, not its title, to step inside it, or right-click it and choose Unpack Subgraph to flatten it onto the canvas).
 
 If a step fails, show the error clearly and use the search tools to find a current alternative rather than assuming none exists.

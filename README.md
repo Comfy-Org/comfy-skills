@@ -61,6 +61,8 @@ Write commands in two layers:
 
 If you find yourself writing a literal model name, template name, or node id into a command, stop and point the agent at the tool that returns the current set instead. That keeps the command correct as the catalog moves, and it keeps the agent from going off on a tangent before it engages the right tool.
 
+- **Build steps must leave the user a canvas-readable artifact: titled nodes + a saved workflow link.** Any step that has the agent build a workflow JSON tells it to give every node a `_meta.title` naming its role, and, when the user asked for a workflow rather than just an output, to `save_workflow` it and return the `get_workflow_canvas_url` link.
+
 ## Contributing
 
 Commands are plain markdown with a short YAML frontmatter `description`. Add or edit a file under `claude-code/commands/`, keep it thin per the rule above, and open a PR. Run `claude plugin validate ./claude-code` before pushing. Keep prose clear and free of emoji.

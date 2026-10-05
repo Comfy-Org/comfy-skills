@@ -12,7 +12,7 @@ Follow these steps exactly:
 
 2. If no suitable template was found, use `search_nodes` to find audio-related nodes. Search for "audio" to discover available audio generation and processing nodes. Use `search_models` to find audio models if needed.
 
-3. Build a ComfyUI API-format workflow JSON with the appropriate audio nodes. Audio workflows vary depending on the task (music generation, sound effects, text-to-speech, etc.) and available nodes.
+3. Build a ComfyUI API-format workflow JSON with the appropriate audio nodes. Audio workflows vary depending on the task (music generation, sound effects, text-to-speech, etc.) and available nodes. Give EVERY node a `_meta.title` that names its role in plain words (e.g. "Load driving video", "Remove background", "Overlay graphic 1", "Save video"). The canvas shows these titles; without them the user sees only class names.
 
 4. **Validate the workflow has inputs and outputs before submitting.** Confirm the JSON contains:
    - At least one **input node** carrying the user's intent (text prompt node, LoadAudio for audio-to-audio, etc.).
@@ -29,5 +29,7 @@ Follow these steps exactly:
 7. Call `get_output` to retrieve the generated audio. Pass a short `description` parameter (e.g. "ambient forest sounds") so the saved file gets a descriptive name.
 
 8. Tell the user where the audio file was saved and how to play it. Audio outputs are saved to disk but not previewed inline.
+
+9. If the user asked to BUILD or CREATE a workflow (not just for an output), after the run completes call `save_workflow` with the same JSON and a descriptive `name`, then `get_workflow_canvas_url` with the returned workflow id, and give the user that link. Mention that the saved layout is auto-generated and may need tidying. If you ran a subgraph template instead, tell the user the canvas shows one collapsed subgraph node and how to open it (double-click the node body, not its title, to step inside it, or right-click it and choose Unpack Subgraph to flatten it onto the canvas).
 
 If any step fails, show the error clearly. Audio generation support in ComfyUI is newer than image generation, so fewer templates and models may be available.

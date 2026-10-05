@@ -8,7 +8,7 @@ Follow these steps exactly:
 
 3. The user must provide an input image. Use `upload_file` to upload it to Comfy Cloud. Use the returned filename in a LoadImage node.
 
-4. Build a ComfyUI API-format workflow JSON for upscaling. A standard upscale workflow uses: LoadImage → UpscaleModelLoader → ImageUpscaleWithModel → SaveImage. For higher quality results with more control, you can use a two-pass approach: upscale first, then run through img2img with a checkpoint at low denoise (0.2-0.4) to add detail.
+4. Build a ComfyUI API-format workflow JSON for upscaling. A standard upscale workflow uses: LoadImage → UpscaleModelLoader → ImageUpscaleWithModel → SaveImage. For higher quality results with more control, you can use a two-pass approach: upscale first, then run through img2img with a checkpoint at low denoise (0.2-0.4) to add detail. Give EVERY node a `_meta.title` that names its role in plain words (e.g. "Load driving video", "Remove background", "Overlay graphic 1", "Save video"). The canvas shows these titles; without them the user sees only class names.
 
 5. **Validate the workflow has inputs and outputs before submitting.** Confirm the JSON contains:
    - At least one **input node** (`LoadImage` for the source image).
@@ -23,5 +23,7 @@ Follow these steps exactly:
 8. Call `get_output` to retrieve the upscaled image. Pass a short `description` parameter (e.g. "upscaled-photo") so the suggested filename is descriptive, then run the returned curl command in the user's shell to download the file.
 
 9. Display the result to the user. Mention the output resolution compared to the input if known.
+
+10. If the user asked to BUILD or CREATE a workflow (not just for an output), after the run completes call `save_workflow` with the same JSON and a descriptive `name`, then `get_workflow_canvas_url` with the returned workflow id, and give the user that link. Mention that the saved layout is auto-generated and may need tidying. If you ran a subgraph template instead, tell the user the canvas shows one collapsed subgraph node and how to open it (double-click the node body, not its title, to step inside it, or right-click it and choose Unpack Subgraph to flatten it onto the canvas).
 
 If any step fails, show the error clearly. Common issues: input image too large for GPU memory (suggest downscaling first or using a tile-based upscaler like UltimateSDUpscale).
