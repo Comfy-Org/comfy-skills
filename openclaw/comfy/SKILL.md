@@ -77,7 +77,9 @@ compute credits — it isn't free on Comfy Cloud, only free of the partner
 surcharge) and ask which they want. If only the partner route exists, or the
 user picks paid, call `partner_generate` — it runs the provider through Comfy
 Cloud and saves the result to your asset library. Do not hand-build a workflow
-for plain text-to-image/video when a partner model is named.
+for plain text-to-image/video when a partner model is named — unless the user
+asked to build or create a workflow: `partner_generate` returns only the
+output, never a workflow, so build the graph around the partner node instead.
 
 **Anything workflow-shaped** (open-source models, LoRA/ControlNet, multi-step
 pipelines): start from a template — `search_templates` → `get_template_schema`
