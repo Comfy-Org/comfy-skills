@@ -1,0 +1,10 @@
+{
+  "name": "comfy-sdk",
+  "description": "Build apps with the Comfy SDK and Comfy Router: client choice, server-side credentials, discover-then-call, run vs submit, timeouts, idempotency, error buckets.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Comfy Org",
+    "url": "https://comfy.org"
+  },
+  "homepage": "https://docs.comfy.org/development/comfy-router/quickstart"
+}

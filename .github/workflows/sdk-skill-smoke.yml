@@ -1,0 +1,99 @@
+# Checks the comfy-sdk skill against the latest published SDKs: its code
+# blocks still parse / type-check, and the surface it names still exists.
+# Offline only -- no Router call is made, so no key is needed.
+name: SDK skill smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      SKILL: claude-code-sdk/skills/comfy-sdk/SKILL.md
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install latest comfy-sdk and comfy-cli
+        run: |
+          uv venv
+          uv pip install --upgrade comfy-sdk comfy-cli
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+
+      - name: Python surface the skill names
+        run: |
+          python -c "import importlib.metadata as m; print('comfy-sdk', m.version('comfy-sdk'))"
+          python -c "from comfy_sdk import Comfy; c=Comfy(api_key='x'); c.models.run; c.models.submit; c.models.handle; import comfy_sdk.router_exceptions"
+
+      - name: Extract and parse the skill's code blocks
+        run: python .github/scripts/sdk_skill_smoke.py "$SKILL" "$RUNNER_TEMP/ts"
+
+      - name: Type-check the TypeScript blocks against latest @comfyorg/sdk
+        working-directory: ${{ runner.temp }}/ts
+        run: |
+          npm init -y > /dev/null
+          npm install @comfyorg/sdk@latest typescript@latest @types/node@latest
+          npm ls @comfyorg/sdk
+          cat > surface.ts <<'TS'
+          import { comfy, Comfy, routerErrors } from "@comfyorg/sdk";
+
+          void comfy.models.run;
+          void comfy.models.submit;
+          void comfy.models.handle;
+          void Comfy;
+          void routerErrors.RouterError;
+          TS
+          cat > tsconfig.json <<'JSON'
+          {
+            "compilerOptions": {
+              "target": "ES2022",
+              "module": "NodeNext",
+              "moduleResolution": "NodeNext",
+              "strict": true,
+              "noEmit": true,
+              "skipLibCheck": true,
+              "types": ["node"]
+            },
+            "include": ["*.ts"]
+          }
+          JSON
+          node -e "const p=require('./package.json'); p.type='module'; require('fs').writeFileSync('package.json', JSON.stringify(p,null,2))"
+          npx tsc --noEmit -p .
+
+      - name: Validate the skill format
+        run: comfy skills validate claude-code-sdk/skills/comfy-sdk
+
+      - name: No model ids, prices or schema literals in the skill
+        run: |
+          if grep -nE 'bfl/|fal-ai/|\$[0-9]' "$SKILL"; then
+            echo "skill hard-codes a model id or price; point at discovery instead"
+            exit 1
+          fi
+
+  plugin-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate the comfy-sdk plugin
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude plugin validate ./claude-code-sdk

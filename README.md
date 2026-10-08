@@ -25,6 +25,17 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 
 > **Other clients** (Claude Desktop, etc.) don't use Claude Code plugins — they connect to the same hosted MCP server through their own config. Full per-client setup lives in the docs: **https://docs.comfy.org/cloud/mcp**
 
+## Install (Claude Code) — comfy-sdk
+
+Building an app on the Comfy SDK (Python `comfy-sdk`, TypeScript `@comfyorg/sdk`) and Comfy Router? The **`comfy-sdk`** plugin is guidance only (no MCP server): one skill that steers the agent on client choice, server-side credentials, discover-then-call, `run` vs `submit`, timeouts, idempotency and error buckets.
+
+```
+/plugin marketplace add Comfy-Org/comfy-skills
+/plugin install comfy-sdk@comfy-skills
+```
+
+**Other agents:** the skill is one file, [`claude-code-sdk/skills/comfy-sdk/SKILL.md`](claude-code-sdk/skills/comfy-sdk/SKILL.md). Copy it into `.claude/skills/comfy-sdk/`, your Cursor rules, or `AGENTS.md`; or, with comfy-cli, run `comfy skills install --skill ./claude-code-sdk/skills/comfy-sdk`.
+
 ## Commands
 
 | Command | What it does |
@@ -45,7 +56,8 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 ## Repo layout
 
 - **`claude-code/`** — the `comfy-cloud` Claude Code plugin: `commands/` (the slash commands) plus `.claude-plugin/plugin.json` (metadata + the bundled MCP server). **Edit commands here.**
-- **`.claude-plugin/marketplace.json`** — the marketplace manifest so `/plugin marketplace add Comfy-Org/comfy-skills` resolves the plugin.
+- **`claude-code-sdk/`** — the `comfy-sdk` Claude Code plugin: a single `skills/comfy-sdk/SKILL.md` plus `.claude-plugin/plugin.json` (metadata only, no MCP server). Keep it one file: comfy-cli and the copy-it-raw targets read only `SKILL.md`. CI (`.github/workflows/sdk-skill-smoke.yml`) checks its code blocks against the latest published SDKs.
+- **`.claude-plugin/marketplace.json`** — the marketplace manifest so `/plugin marketplace add Comfy-Org/comfy-skills` resolves both plugins.
 - **`skills/`** — *legacy* flat command files for the deprecated `comfy-cloud-mcp` curl installer. Frozen; will be removed once that installer fully retires.
 
 `comfy-cli`'s own agent skills (`comfy`, `comfy-debug`, `comfy-relay`, `comfy-director`, `comfy-build`, ...) no longer live here — they ship bundled inside [comfy-cli](https://github.com/Comfy-Org/comfy-cli) itself (`comfy_cli/skills/`), versioned with each CLI release, and are installed the same way as ever via `comfy skills install`.
@@ -63,7 +75,7 @@ If you find yourself writing a literal model name, template name, or node id int
 
 ## Contributing
 
-Commands are plain markdown with a short YAML frontmatter `description`. Add or edit a file under `claude-code/commands/`, keep it thin per the rule above, and open a PR. Run `claude plugin validate ./claude-code` before pushing. Keep prose clear and free of emoji.
+Commands are plain markdown with a short YAML frontmatter `description`. Add or edit a file under `claude-code/commands/`, keep it thin per the rule above, and open a PR. Run `claude plugin validate ./claude-code` (or `./claude-code-sdk`) before pushing. Keep prose clear and free of emoji.
 
 ## Status
 
