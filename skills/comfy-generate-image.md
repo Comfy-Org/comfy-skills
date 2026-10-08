@@ -2,7 +2,7 @@ Generate, edit, or modify an image using Comfy Cloud based on the user's descrip
 
 Follow these steps exactly:
 
-**Step 0 — Route partner-API requests directly.** If the user named a provider, model, or capability (e.g. "Flux Pro Ultra", "Nano Banana", "Kling", "DALL-E"), do one `search_nodes` lookup with the named term. If the matching node's category starts with `partner/`, try `partner_generate` first — see its tool description for the currently-wired model ids. Pass `type: "image"` plus the partner's model slug, `prompt`, and any optional fields (`aspect_ratio`/`seed`/`medias[]`). On success, return the artifact URL(s) and **stop** — do NOT continue with the workflow steps below. If `partner_generate` returns "unknown model" or "not yet implemented", or the matching node has no `partner/` prefix (OSS model), continue to Step 1.
+**Step 0 — Route partner-API requests directly.** If the user named a provider, model, or capability (e.g. "Flux Pro Ultra", "Nano Banana", "Kling", "DALL-E"), do one `search_nodes` lookup with the named term. If the matching node's category starts with `partner/`, try `partner_generate` first — see its tool description for the currently-wired model ids. Pass `type: "image"` plus the partner's model slug, `prompt`, and any optional fields (`aspect_ratio`/`seed`/`medias[]`). On success, return the artifact URL(s) and **stop** — do NOT continue with the workflow steps below. If `partner_generate` returns "unknown model" or "not yet implemented", or the matching node has no `partner/` prefix (OSS model), continue to Step 1. `partner_generate` returns only the output, never a workflow: if the user asked to BUILD or CREATE a workflow (not just for an output), skip `partner_generate` and continue to Step 1, wiring the matching partner node into the workflow you build.
 
 1. Use `search_templates` to find a pre-built workflow template that matches the request (e.g. "text to image", "image to video", "style transfer", "inpainting"). If a good template exists, use it as the base workflow instead of building from scratch.
 
@@ -10,7 +10,7 @@ Follow these steps exactly:
 
 3. If the user provides an input image (for img2img, style transfer, upscaling, etc.), use `upload_file` to upload it to Comfy Cloud first. Use the returned filename in a LoadImage node.
 
-4. Build a ComfyUI API-format workflow JSON with the appropriate nodes (or use the template workflow). A standard text-to-image workflow uses: CheckpointLoaderSimple, CLIPTextEncode (positive and negative prompts), EmptyLatentImage, KSampler, VAEDecode, SaveImage. For img2img, replace EmptyLatentImage with LoadImage + VAEEncode.
+4. Build a ComfyUI API-format workflow JSON with the appropriate nodes (or use the template workflow). A standard text-to-image workflow uses: CheckpointLoaderSimple, CLIPTextEncode (positive and negative prompts), EmptyLatentImage, KSampler, VAEDecode, SaveImage. For img2img, replace EmptyLatentImage with LoadImage + VAEEncode. Give EVERY node a `_meta.title` that names its role in plain words (e.g. "Load driving video", "Remove background", "Overlay graphic 1", "Save video"). The canvas shows these titles; without them the user sees only class names.
 
 5. **Validate the workflow has inputs and outputs before submitting.** Confirm the JSON contains:
    - At least one **input node** carrying the user's intent (CLIPTextEncode for prompts, LoadImage for img2img/style transfer, etc.).
@@ -27,5 +27,7 @@ Follow these steps exactly:
 9. Display the image to the user:
    - In **GUI environments** (Claude Desktop): the response includes an `ARTIFACT_HTML:` block — create an HTML artifact using that exact HTML so the image appears in the side panel. The file is also saved to disk.
    - In **CLI/terminal environments** (Claude Code, Cursor): the response contains a temporary signed GCS download URL, a suggested save path, and a ready-to-run `curl` command on its own line. **Execute that `curl` command verbatim** via your shell/Bash tool — do not reconstruct it from the raw URL, and do not re-quote, re-encode, or strip any query parameters. The signature lives in the query string (`X-Goog-Signature=` and related params), and any modification will invalidate the link and the download will fail. After the file is saved, open it with `open` (macOS), `xdg-open` (Linux), or `start` (Windows).
+
+10. If the user asked to BUILD or CREATE a workflow (not just for an output), after the run completes call `save_workflow` with the same JSON and a descriptive `name`, then `get_workflow_canvas_url` with the returned workflow id, and give the user that link. Mention that the saved layout is auto-generated and may need tidying. If you ran a subgraph template instead, tell the user the canvas shows one collapsed subgraph node and how to open it (double-click the node body, not its title, to step inside it, or right-click it and choose Unpack Subgraph to flatten it onto the canvas).
 
 If any step fails, show the error clearly and suggest what might have gone wrong (wrong model, invalid node configuration, etc.).

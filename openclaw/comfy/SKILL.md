@@ -77,14 +77,22 @@ compute credits — it isn't free on Comfy Cloud, only free of the partner
 surcharge) and ask which they want. If only the partner route exists, or the
 user picks paid, call `partner_generate` — it runs the provider through Comfy
 Cloud and saves the result to your asset library. Do not hand-build a workflow
-for plain text-to-image/video when a partner model is named.
+for plain text-to-image/video when a partner model is named — unless the user
+asked to build or create a workflow: `partner_generate` returns only the
+output, never a workflow, so build the graph around the partner node instead.
 
 **Anything workflow-shaped** (open-source models, LoRA/ControlNet, multi-step
 pipelines): start from a template — `search_templates` → `get_template_schema`
 → `run_template` with `input_overrides`. For fully custom graphs use
 `submit_workflow` (the graph must end in an output node like SaveImage, or
-validation rejects it). Save and reuse with `save_workflow` /
-`run_saved_workflow`.
+validation rejects it). Give every node in a custom graph a `_meta.title`
+naming its role in plain words ("Load driving video", "Remove background",
+"Save video") — the canvas shows these titles; without them the user sees only
+class names. Save and reuse with `save_workflow` / `run_saved_workflow`. When
+the user asked to build or create a workflow (not just for an output), save it
+with `save_workflow` after the run, then hand them the link from
+`get_workflow_canvas_url` and mention the saved layout is auto-generated and
+may need tidying.
 
 **Editing an existing image**: `upload_file` first, then reference the
 uploaded file from a LoadImage node (or pass it to `partner_generate` for

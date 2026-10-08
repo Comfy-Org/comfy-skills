@@ -6,20 +6,20 @@ Generate a 3D model using Comfy Cloud based on the user's description: $ARGUMENT
 
 Approach: prefer a ready-made template over hand-building, and discover the current options with the tools rather than assuming a fixed catalog. Model, node, and template availability changes over time, so let the tools tell you what exists right now.
 
-**Step 0 - Partner-API shortcut.** If the user named a provider or capability (Meshy, Tripo, Rodin, Tencent, and so on), find the matching node with `search_nodes` filtered by `category: "api node/3d"` (optionally add a `q` for the provider name). If a matching `api node/3d/...` node exists, try `partner_generate` first with `type: "3d"` and that provider's model slug, plus `prompt` and any optional fields (`seed`, `medias[]`). On success, return the artifact URL(s) and stop. If it returns "unknown model" or "not yet implemented", continue below.
+**Step 0 - Partner-API shortcut.** If the user named a provider or capability (Meshy, Tripo, Rodin, Tencent, and so on), find the matching node with `search_nodes` filtered by `category: "partner/3d"` (optionally add a `q` for the provider name). If a matching `partner/3d/...` node exists, try `partner_generate` first with `type: "3d"` and that provider's model slug, plus `prompt` and any optional fields (`seed`, `medias[]`). On success, return the artifact URL(s) and stop. If it returns "unknown model" or "not yet implemented", or says it "does not serve type" (3D has no `partner_generate` persist path today), continue below — the template path in step 1 does generate 3D on Comfy Cloud. `partner_generate` returns only the output, never a workflow: if the user asked to BUILD or CREATE a workflow (not just for an output), skip `partner_generate` and continue to Step 1, wiring the matching partner node into the workflow you build.
 
 1. **Look for a template first.** Call `search_templates` with `tag: "Image to 3D"` (image-to-3D is the common case), and/or `q: "3d"` for the broader set. If a suitable template comes back, clone it as your base workflow: swap in the user's input (such as the reference image) and adjust settings instead of building from scratch. Cloning a template is almost always faster than hand-wiring nodes, so spend real effort here before falling through to step 2.
 
 2. **If no template fits, discover nodes structurally - do not free-text guess.** Use `search_nodes` with its typed filters, which match against the live catalog:
    - `output_type: "FILE_3D_GLB"` (also `MESH`, `FILE_3D_OBJ`) to find nodes that produce a 3D file.
-   - `category: "3d"` or `category: "api node/3d"` to browse the 3D nodes.
+   - `category: "3d"` or `category: "partner/3d"` to browse the 3D nodes.
    - `input_type: "IMAGE"` to find what accepts an image, for image-to-3D.
 
    Use `search_models` for any checkpoints the chosen nodes require. Do not paste in remembered model or node names - query for them, because the set changes.
 
 3. If the user provides a reference image (image-to-3D), `upload_file` it first.
 
-4. Build a ComfyUI API-format workflow JSON, or edit the cloned template. A 3D workflow generally chains an input, a 3D generation or reconstruction node, and a 3D save/output node.
+4. Build a ComfyUI API-format workflow JSON, or edit the cloned template. A 3D workflow generally chains an input, a 3D generation or reconstruction node, and a 3D save/output node. Give EVERY node a `_meta.title` that names its role in plain words (e.g. "Load driving video", "Remove background", "Overlay graphic 1", "Save video"). The canvas shows these titles; without them the user sees only class names.
 
 5. **Validate inputs and outputs before submitting.** Confirm the workflow has:
    - at least one input node carrying the user's intent (a text prompt node, or LoadImage for image-to-3D), and
@@ -34,5 +34,7 @@ Approach: prefer a ready-made template over hand-building, and discover the curr
 8. Call `get_output` to retrieve the result. Pass a short `description` (for example "red sports car 3d model") so the saved file gets a descriptive name.
 
 9. Tell the user where the files were saved. 3D outputs may include mesh files (.obj, .glb), textures, or rendered preview images.
+
+10. If the user asked to BUILD or CREATE a workflow (not just for an output), after the run completes call `save_workflow` with the same JSON and a descriptive `name`, then `get_workflow_canvas_url` with the returned workflow id, and give the user that link. Mention that the saved layout is auto-generated and may need tidying. If you ran a subgraph template instead, tell the user the canvas shows one collapsed subgraph node and how to open it (double-click the node body, not its title, to step inside it, or right-click it and choose Unpack Subgraph to flatten it onto the canvas).
 
 If a step fails, show the error clearly and use the search tools to find a current alternative rather than assuming none exists.
