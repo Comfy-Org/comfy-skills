@@ -13,7 +13,33 @@ import re
 import sys
 from pathlib import Path
 
-FENCE = re.compile(r"^```(python|ts)\n(.*?)^```", re.M | re.S)
+# CommonMark fenced blocks: an opener of 3+ backticks or tildes (up to three
+# spaces in), closed only by the same character at least as long, with nothing
+# but whitespace after it.
+OPEN = re.compile(r"^( {0,3})(`{3,}|~{3,})(.*)$")
+
+
+def fences(text: str) -> list[tuple[str, str]]:
+    blocks, lines, i = [], text.splitlines(), 0
+    while i < len(lines):
+        m = OPEN.match(lines[i])
+        # A backtick fence's info string may not itself contain a backtick.
+        if m is None or (m[2][0] == "`" and "`" in m[3]):
+            i += 1
+            continue
+        indent, fence, lang = len(m[1]), m[2], (m[3].split() or [""])[0]
+        close = re.compile(rf"^ {{0,3}}{re.escape(fence[0])}{{{len(fence)},}}\s*$")
+        body, i = [], i + 1
+        while i < len(lines) and not close.match(lines[i]):
+            line = lines[i]
+            body.append(line[min(indent, len(line) - len(line.lstrip(" "))) :])
+            i += 1
+        if i == len(lines):
+            raise SystemExit(f"unclosed {fence} fence ({lang or 'no info string'})")
+        i += 1
+        if lang in ("python", "ts"):
+            blocks.append((lang, "\n".join(body) + "\n"))
+    return blocks
 
 
 def fill(code: str) -> str:
@@ -24,7 +50,7 @@ def fill(code: str) -> str:
 def main() -> int:
     skill, out = Path(sys.argv[1]), Path(sys.argv[2])
     out.mkdir(parents=True, exist_ok=True)
-    blocks = FENCE.findall(skill.read_text())
+    blocks = fences(skill.read_text())
     langs = {lang for lang, _ in blocks}
     if langs != {"python", "ts"}:
         print(f"expected python and ts blocks, found {sorted(langs) or 'none'}")
