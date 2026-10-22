@@ -32,6 +32,7 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 | `/comfy-cloud:generate-image` | Generate, edit, or modify an image |
 | `/comfy-cloud:generate-video` | Generate, edit, or extend a video |
 | `/comfy-cloud:generate-audio` | Generate audio |
+| `/comfy-cloud:clone-voice` | Clone a voice from a reference recording and speak text with it |
 | `/comfy-cloud:generate-3d` | Generate a 3D model |
 | `/comfy-cloud:remove-background` | Remove the background from an image |
 | `/comfy-cloud:upscale-image` | Upscale an image |
