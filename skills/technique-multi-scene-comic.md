@@ -16,14 +16,15 @@ Then turn that reference into a sheet. Use `search_templates` (query `character 
 
 ## Step 3: Generate each scene panel
 
-For each scene, run a multi-reference image template with the sheets of ALL characters in that scene attached, plus the scene prompt (location, action, camera, style string). Candidates:
+For each scene, run a multi-reference image template with the sheets of ALL characters in that scene attached, plus the scene prompt (location, action, camera, style string). Pick a template with at least one LoadImage slot per character in the scene. Candidates, with their LoadImage slot counts:
 
-- `api_google_nano_banana2_image_edit` / `api_nano_banana_pro`: Nano Banana, reference-consistent edit
-- `api_kling_omni_image`: Kling O1, up to 10 reference images
-- `flux_kontext_dev_basic`: keeps a character consistent (single reference)
-- `image_qwen_image_edit_2509`: multi-image input
+- `api_flux2` (FLUX.2 Pro): 4 slots, multi-reference consistency
+- `api_bfl_flux_1_kontext_multiple_images_input` (Flux.1 Kontext Multiple Image Input): 3 slots
+- `api_nano_banana_pro` (Nano Banana Pro): 2 slots
+- `api_kling_o3_image` (Kling O3): 2 slots
+- `flux_kontext_dev_basic`: 1 slot, single-character scenes only
 
-Use `get_template_schema` to find the LoadImage slots, then feed each sheet in with `use_previous_output` (sheet job id + output index → the returned filename goes in the LoadImage slot). That chains the output straight in, with no download and re-upload. Keep the seed fixed across panels where the template exposes one.
+Use `get_template_schema` to confirm the LoadImage slots before you submit. If a scene has more characters than the template has slots, first combine up to four sheets into one image with `utility_image_stitch` (Image Stitch 2x2 Grid), then pass that grid as one reference and say in the prompt which quadrant shows which character. Feed each sheet (or grid) in with `use_previous_output` (job id + output index → the returned filename goes in the LoadImage slot). That chains the output straight in, with no download and re-upload. Keep the seed fixed across panels where the template exposes one.
 
 Prompt rule: say which reference is which ("Reference 1 is Mira: silver hair, burn scar on right cheek, red school blazer …"), and demand exact reproduction of face, hair and outfit from the references.
 
