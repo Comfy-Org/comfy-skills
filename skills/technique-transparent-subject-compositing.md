@@ -154,7 +154,24 @@ Scale the mask to set opacity, then composite:
 }
 ```
 
-`ImageCompositeMasked` blends per pixel by mask value, so a mask multiplied down to `0.45` gives a 45% character over a 100% background — the background genuinely shows through, and `value` is a dial the user can move without regenerating anything. Size `SolidMask` to the image — the `1280x720` above is a placeholder, so set `width` / `height` to the actual dimensions of the Step 1 image. `MaskComposite` multiplies only where the two masks overlap and does not resize, so a `SolidMask` smaller than the image silently leaves the rest of the character at full opacity. Run `FeatherMask` on the tight mask first if the edge reads as cut out.
+`ImageCompositeMasked` blends per pixel by mask value, so a mask multiplied down to `0.45` gives a 45% character over a 100% background — the background genuinely shows through, and `value` is a dial the user can move without regenerating anything. Size `SolidMask` to the image — the `1280x720` above is a placeholder, so set `width` / `height` to the actual dimensions of the Step 1 image. `MaskComposite` multiplies only where the two masks overlap and does not resize, so a `SolidMask` smaller than the image silently leaves the rest of the character at full opacity. If the edge reads as cut out, blur the tight mask before the multiply — and don't reach for `FeatherMask` for this: it only fades the mask in from the image's borders and leaves a subject's outline untouched. Round-trip through an image instead, then feed `soft_mask` (rather than `segmentation_node` slot 1) into the `destination` of `faded_mask`:
+
+```json
+{
+  "mask_as_image": {
+    "class_type": "MaskToImage",
+    "inputs": { "mask": ["segmentation_node", 1] }
+  },
+  "blurred": {
+    "class_type": "ImageBlur",
+    "inputs": { "image": ["mask_as_image", 0], "blur_radius": 4, "sigma": 2.0 }
+  },
+  "soft_mask": {
+    "class_type": "ImageToMask",
+    "inputs": { "image": ["blurred", 0], "channel": "red" }
+  }
+}
+```
 
 If a downstream step needs the character as a standalone RGBA layer instead of a flattened frame, use `JoinImageWithAlpha` — but **invert the faded mask first**:
 
