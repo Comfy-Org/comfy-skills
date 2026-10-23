@@ -90,9 +90,12 @@ naming its role in plain words ("Load driving video", "Remove background",
 "Save video") — the canvas shows these titles; without them the user sees only
 class names. Save and reuse with `save_workflow` / `run_saved_workflow`. When
 the user asked to build or create a workflow (not just for an output), save it
-with `save_workflow` after the run, then hand them the link from
-`get_workflow_canvas_url` and mention the saved layout is auto-generated and
-may need tidying.
+with `save_workflow` (`overwrite: false`; new name on collision) after the
+run, then hand them the link from `get_workflow_canvas_url` using the
+`workflow_id` from the save result (from `list_saved_workflows` if the result
+omits it — never the filename, which publishes a public snapshot); on a
+`run_template` route, `get_template` and save that body. Mention the saved
+layout is auto-generated and may need tidying.
 
 **Editing an existing image**: `upload_file` first, then reference the
 uploaded file from a LoadImage node (or pass it to `partner_generate` for
