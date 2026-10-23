@@ -99,21 +99,34 @@ const { kind, data, requestId } = await comfy.models.run("<provider>/<model>", {
   `idempotency_key=` / `{ idempotencyKey }` yourself and keep the body identical;
   the same key with a different body is refused `409 invalid_input` (use a new key).
 
-## 7. Errors: branch on `error_type`
+## 7. Errors: branch on the bucket
 
-Python raises classes from `comfy_sdk.router_exceptions`; TypeScript throws
-`routerErrors.*`, all descending from `RouterError`. Both carry the wire
-`error_type` (`exc.error_type` in Python, `err.errorType` in TypeScript; also the
-`X-Comfy-Error-Type` header).
+Every failure carries Router's wire bucket (also the `X-Comfy-Error-Type`
+header), but where you read it depends on the language and the call:
+
+- **Python**, every call: classes from `comfy_sdk.router_exceptions`, all
+  descending from `RouterError`; read `exc.error_type`.
+- **TypeScript `comfy.models.run`** (synchronous): throws `ComfyError` and its
+  subclasses (`InsufficientCredits`, `Forbidden`, `Unauthorized`, `NotFound`),
+  **not** `routerErrors.*`. Read `err.code`; there is no `errorType`, and
+  `instanceof routerErrors.RouterError` is `false`.
+- **TypeScript queued** (`submit` / `handle` / `subscribe`): throws
+  `routerErrors.*`, all descending from `routerErrors.RouterError`; read
+  `err.errorType`.
+
+So a TypeScript app that uses both paths needs both catches.
 
 - `insufficient_credits` (`402`): stop and tell the user to add credits. Never retry.
 - `content_policy_violation`: do not resend the same prompt.
-- `rate_limited` / `concurrency_limit_exceeded`: honour `Retry-After` (the SDK does).
+- `rate_limited` / `concurrency_limit_exceeded` (`429`): wait `Retry-After`, then
+  resend. Python `run` does this for you. TypeScript does **not** retry a `429`;
+  wait `err.retryAfter` seconds yourself, or tell the user to try again.
 - `not_enabled` (`403`): the workspace is not on this model or route yet; terminal.
 - `provider_timeout` vs `deadline_exceeded`: both `504`; the first is the partner,
   the second is Comfy's bound. The SDK retries the second with the same key.
-- An unrecognised `error_type` surfaces as the base `RouterError`, so keep a
-  catch-all branch.
+- Keep a catch-all branch. An unrecognised bucket surfaces as the base class:
+  `RouterError` in Python and on the TypeScript queued path, `ComfyError` from
+  TypeScript `run`.
 - A queued request can finish as `COMPLETED` **with** an `error_type`; `get()` raises
   the typed error, and the event iterator yields it as the last observation.
 

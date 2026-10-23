@@ -51,13 +51,16 @@ jobs:
           npm install @comfyorg/sdk@latest typescript@latest @types/node@latest
           npm ls @comfyorg/sdk
           cat > surface.ts <<'TS'
-          import { comfy, Comfy, routerErrors } from "@comfyorg/sdk";
+          import { comfy, Comfy, ComfyError, Forbidden, InsufficientCredits, NotFound, Unauthorized, routerErrors } from "@comfyorg/sdk";
 
           void comfy.models.run;
           void comfy.models.submit;
           void comfy.models.handle;
           void Comfy;
-          void routerErrors.RouterError;
+          void [Forbidden, InsufficientCredits, NotFound, Unauthorized];
+          // Section 7: `run` errors carry `code`, queued errors `errorType`; both `retryAfter`.
+          export const runError = (e: ComfyError): [string | undefined, number | null] => [e.code, e.retryAfter];
+          export const queuedError = (e: routerErrors.RouterError): [string, number | null] => [e.errorType, e.retryAfter];
           TS
           cat > tsconfig.json <<'JSON'
           {
