@@ -1,6 +1,6 @@
 {
   "name": "comfy-skills",
-  "description": "Comfy skills and plugins for AI coding agents. Includes comfy-cloud, the Comfy Cloud MCP connection plus slash commands for Claude Code.",
+  "description": "Comfy skills and plugins for AI coding agents. Includes comfy-cloud, the Comfy Cloud MCP connection plus slash commands for Claude Code, and comfy-sdk, guidance for building apps with the Comfy SDK and Comfy Router.",
   "owner": {
     "name": "Comfy Org",
     "url": "https://comfy.org"
@@ -11,6 +11,12 @@
       "source": "./claude-code",
       "description": "Comfy Cloud in Claude Code: the hosted MCP connection plus slash commands for generating images, video, audio, and 3D and searching the catalog.",
       "homepage": "https://docs.comfy.org/cloud/mcp"
+    },
+    {
+      "name": "comfy-sdk",
+      "source": "./claude-code-sdk",
+      "description": "Guidance for coding agents building apps with the Comfy SDK and Comfy Router. No MCP server.",
+      "homepage": "https://docs.comfy.org/development/comfy-router/quickstart"
     }
   ]
 }
