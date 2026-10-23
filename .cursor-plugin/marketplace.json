@@ -1,0 +1,17 @@
+{
+  "name": "comfy-skills",
+  "owner": {
+    "name": "Comfy Org"
+  },
+  "metadata": {
+    "description": "Comfy skills and plugins for AI coding agents. Includes comfy-cloud, the Comfy Cloud MCP connection plus slash commands for Cursor."
+  },
+  "plugins": [
+    {
+      "name": "comfy-cloud",
+      "source": ".",
+      "description": "Generate images, video, audio, and 3D, search models, nodes, and templates, and run ComfyUI workflows from Cursor.",
+      "homepage": "https://docs.comfy.org/cloud/mcp"
+    }
+  ]
+}

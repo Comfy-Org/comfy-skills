@@ -1,0 +1,11 @@
+{
+  "name": "comfy-cloud",
+  "description": "Generate images, video, audio, and 3D, search models, nodes, and templates, and run ComfyUI workflows from Cursor.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Comfy Org"
+  },
+  "homepage": "https://docs.comfy.org/cloud/mcp",
+  "logo": "https://raw.githubusercontent.com/Comfy-Org/comfy-skills/main/assets/logo.png",
+  "commands": "claude-code/commands"
+}
