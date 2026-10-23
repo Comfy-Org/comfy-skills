@@ -51,7 +51,7 @@ For motion, use a template from `search_templates({ query: "reference to video" 
 
 ## Step 7: Variations and iteration
 
-Tell the user the total first (shots x seeds, default 2 seeds per shot, at most 3) and submit them as ONE `submit_batch` so a single confirmation covers the whole fan-out; do not batch a run that needs another run's output (the Step 4 split pass). Show the results and ask which to keep. Regenerate only the shots that drifted, with the same references and a tightened Step 3 prompt.
+Tell the user the total first (shots x seeds, default 2 seeds per shot, at most 3) and submit them as ONE `submit_batch` so a single confirmation covers the whole fan-out (a batch holds at most 50 items; above that, split across several `submit_batch` calls and state each batch's total); do not batch a run that needs another run's output (the Step 4 split pass). Show the results and ask which to keep. Regenerate only the shots that drifted, with the same references and a tightened Step 3 prompt.
 
 ## Key learnings:
 
