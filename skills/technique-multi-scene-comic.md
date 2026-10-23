@@ -12,7 +12,7 @@ Ask for (or draft and confirm) a scene list: N panels, each with location, chara
 
 ## Step 2: Make a character sheet for each character
 
-If the user uploaded a reference for a character, `upload_file` it. Otherwise generate one front-facing reference from text first with `partner_generate` (text-to-image, no image inputs, e.g. `bfl/flux-2-pro`), prompting with the style string and the character description. Do not use a reference-image template for this: with no reference to give it, its image inputs would run with demo pictures.
+If the user uploaded a reference for a character, `upload_file` it. Otherwise generate one front-facing reference from text first with a text-to-image `partner_generate` call (for example `bfl/flux-2-pro`), prompting with the style string and the character description. Do not use a reference-image template for this: with no reference to give it, its image inputs would run with demo pictures.
 
 Then turn that reference into a sheet. Use `search_templates` (query `character reference` or `turnaround`). `api_google_nano_banana_create_turnaround_sheet` takes one LoadImage reference and returns front/side/back views. `template_3x3_contact_sheet` returns pose and angle variations of the same character and outfit, but it has three LoadImage inputs; use it only when you have three images of that character to fill them. Call `get_template_schema` first to learn the overridable slots, `run_template`, then `wait_for_job`. Keep each character's job id: it is the identity anchor for every later panel.
 
