@@ -101,24 +101,38 @@ const { kind, data, requestId } = await comfy.models.run("<provider>/<model>", {
 
 ## 7. Errors: branch on the bucket
 
-Every failure carries Router's wire bucket (also the `X-Comfy-Error-Type`
-header), but where you read it depends on the language and the call:
+A Router error response carries Router's wire bucket (also the
+`X-Comfy-Error-Type` header), but where you read it depends on the language and
+the call:
 
-- **Python**, every call: classes from `comfy_sdk.router_exceptions`, all
-  descending from `RouterError`; read `exc.error_type`.
+- **Python**, every call: Router responses raise classes from
+  `comfy_sdk.router_exceptions`, all descending from `RouterError`; read
+  `exc.error_type`.
 - **TypeScript `comfy.models.run`** (synchronous): throws `ComfyError` and its
   subclasses (`InsufficientCredits`, `Forbidden`, `Unauthorized`, `NotFound`),
   **not** `routerErrors.*`. Read `err.code`; there is no `errorType`, and
   `instanceof routerErrors.RouterError` is `false`.
 - **TypeScript queued** (`submit` / `handle` / `subscribe`): a Router error
   response throws `routerErrors.*`, all descending from
-  `routerErrors.RouterError`; read `err.errorType`. Failures on the client side
-  are **not** Router responses and throw a plain `ComfyError` instead: exceeding
-  `timeoutMs` is `err.code === "request_timeout"`, and an unreadable reply is
-  `invalid_response`.
+  `routerErrors.RouterError`; read `err.errorType`.
 
-So a TypeScript app needs a `ComfyError` catch on both paths, plus a
-`routerErrors.RouterError` catch on the queued one.
+Failures on the client side are **not** Router responses and carry no bucket:
+
+- SDK-raised: a plain `ComfyError` (Python and TypeScript). An unreadable reply
+  is `code` `invalid_response`; a TypeScript queued call exceeding `timeoutMs` is
+  `request_timeout`.
+- Transport: a dropped connection or read timeout surfaces as the HTTP library's
+  own error once the SDK's retries are spent: `httpx.HTTPError` in Python, a
+  native `TypeError` from `fetch` in TypeScript.
+- Waits and cancellation: Python `subscribe` past its `timeout=` raises
+  `TimeoutError` (a `run` past its `timeout=` is a transport read timeout).
+  A TypeScript caller's own `AbortSignal` rethrows its abort reason unchanged
+  (an `AbortError` by default).
+
+So a TypeScript app needs a `ComfyError` catch on both paths, a
+`routerErrors.RouterError` catch on the queued one, and a final catch for
+transport errors and its own aborts; a Python app catches `RouterError`, then
+`ComfyError`, `httpx.HTTPError` and `TimeoutError`.
 
 - `insufficient_credits` (`402`): stop and tell the user to add credits. Never retry.
 - `content_policy_violation`: do not resend the same prompt.
@@ -130,7 +144,7 @@ So a TypeScript app needs a `ComfyError` catch on both paths, plus a
   the second is Comfy's bound. The SDK retries the second with the same key.
 - Keep a catch-all branch. An unrecognised bucket surfaces as the base class:
   `RouterError` in Python and for Router responses on the TypeScript queued path,
-  `ComfyError` from TypeScript `run` and from client-side queued failures.
+  `ComfyError` from TypeScript `run` and from SDK-raised client-side failures.
 - A queued request can finish as `COMPLETED` **with** an `error_type`; `get()` raises
   the typed error, and the event iterator yields it as the last observation.
 
