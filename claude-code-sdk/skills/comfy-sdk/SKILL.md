@@ -119,8 +119,9 @@ the call:
 Failures on the client side are **not** Router responses and carry no bucket:
 
 - SDK-raised: a plain `ComfyError` (Python and TypeScript). An unreadable reply
-  is `code` `invalid_response`; a TypeScript queued call exceeding `timeoutMs` is
-  `request_timeout`.
+  is `code` `invalid_response` in Python and on the TypeScript queued calls, but
+  `unexpected_response` from TypeScript `comfy.models.run`. A TypeScript queued
+  call exceeding `timeoutMs` is `request_timeout`.
 - Transport: a dropped connection or read timeout surfaces as the HTTP library's
   own error once the SDK's retries are spent: `httpx.HTTPError` in Python, a
   native `TypeError` from `fetch` in TypeScript.
