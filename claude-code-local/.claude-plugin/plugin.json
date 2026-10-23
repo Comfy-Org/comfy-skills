@@ -1,0 +1,16 @@
+{
+  "name": "comfy-local",
+  "description": "Comfy local for Claude Code — drive your own ComfyUI install: generate images and video, search the built-in template gallery and your live model and node catalogs, validate and run workflows. Bundles the comfy-mcp stdio MCP connection (via comfy-cli) plus slash commands.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Comfy Org",
+    "url": "https://comfy.org"
+  },
+  "homepage": "https://github.com/Comfy-Org/comfy-mcp",
+  "mcpServers": {
+    "comfy-local": {
+      "command": "uvx",
+      "args": ["comfy-mcp"]
+    }
+  }
+}
