@@ -110,11 +110,15 @@ header), but where you read it depends on the language and the call:
   subclasses (`InsufficientCredits`, `Forbidden`, `Unauthorized`, `NotFound`),
   **not** `routerErrors.*`. Read `err.code`; there is no `errorType`, and
   `instanceof routerErrors.RouterError` is `false`.
-- **TypeScript queued** (`submit` / `handle` / `subscribe`): throws
-  `routerErrors.*`, all descending from `routerErrors.RouterError`; read
-  `err.errorType`.
+- **TypeScript queued** (`submit` / `handle` / `subscribe`): a Router error
+  response throws `routerErrors.*`, all descending from
+  `routerErrors.RouterError`; read `err.errorType`. Failures on the client side
+  are **not** Router responses and throw a plain `ComfyError` instead: exceeding
+  `timeoutMs` is `err.code === "request_timeout"`, and an unreadable reply is
+  `invalid_response`.
 
-So a TypeScript app that uses both paths needs both catches.
+So a TypeScript app needs a `ComfyError` catch on both paths, plus a
+`routerErrors.RouterError` catch on the queued one.
 
 - `insufficient_credits` (`402`): stop and tell the user to add credits. Never retry.
 - `content_policy_violation`: do not resend the same prompt.
@@ -125,8 +129,8 @@ So a TypeScript app that uses both paths needs both catches.
 - `provider_timeout` vs `deadline_exceeded`: both `504`; the first is the partner,
   the second is Comfy's bound. The SDK retries the second with the same key.
 - Keep a catch-all branch. An unrecognised bucket surfaces as the base class:
-  `RouterError` in Python and on the TypeScript queued path, `ComfyError` from
-  TypeScript `run`.
+  `RouterError` in Python and for Router responses on the TypeScript queued path,
+  `ComfyError` from TypeScript `run` and from client-side queued failures.
 - A queued request can finish as `COMPLETED` **with** an `error_type`; `get()` raises
   the typed error, and the event iterator yields it as the last observation.
 
