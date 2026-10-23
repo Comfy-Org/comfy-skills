@@ -62,7 +62,7 @@ Write commands in two layers:
 
 If you find yourself writing a literal model name, template name, or node id into a command, stop and point the agent at the tool that returns the current set instead. That keeps the command correct as the catalog moves, and it keeps the agent from going off on a tangent before it engages the right tool.
 
-- **Build steps must leave the user a canvas-readable artifact: titled nodes + a saved workflow link.** Any step that has the agent build a workflow JSON tells it to give every node a `_meta.title` naming its role, and, when the user asked for a workflow rather than just an output, to `save_workflow` it and return the `get_workflow_canvas_url` link.
+- **Build steps must leave the user a canvas-readable artifact: titled nodes + a saved workflow link.** Any step that has the agent build a workflow JSON tells it to give every node a `_meta.title` naming its role, and, when the user asked for a workflow rather than just an output, to `save_workflow` it with `overwrite: false` (a new name on collision, never replacing the user's existing workflow) and return the `get_workflow_canvas_url` link for the `workflow_id` the save returned (looked up with `list_saved_workflows` if the result omits it) — never by filename, which publishes a public share snapshot.
 
 ## Contributing
 
