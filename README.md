@@ -32,6 +32,7 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 | `/comfy-cloud:generate-image` | Generate, edit, or modify an image |
 | `/comfy-cloud:generate-video` | Generate, edit, or extend a video |
 | `/comfy-cloud:generate-audio` | Generate audio |
+| `/comfy-cloud:clone-voice` | Clone a voice from a reference recording and speak text with it |
 | `/comfy-cloud:generate-3d` | Generate a 3D model |
 | `/comfy-cloud:remove-background` | Remove the background from an image |
 | `/comfy-cloud:upscale-image` | Upscale an image |
@@ -48,6 +49,8 @@ Commands are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/
 - **`.claude-plugin/marketplace.json`** — the marketplace manifest so `/plugin marketplace add Comfy-Org/comfy-skills` resolves the plugin.
 - **`skills/`** — *legacy* flat command files for the deprecated `comfy-cloud-mcp` curl installer. Frozen; will be removed once that installer fully retires.
 
+`comfy-cli`'s own agent skills (`comfy`, `comfy-debug`, `comfy-relay`, `comfy-director`, `comfy-build`, ...) no longer live here — they ship bundled inside [comfy-cli](https://github.com/Comfy-Org/comfy-cli) itself (`comfy_cli/skills/`), versioned with each CLI release, and are installed the same way as ever via `comfy skills install`.
+
 ## Authoring rule: steer the approach, defer the specifics
 
 A command installed on a user's machine is **frozen at install time**. So it must never hard-code facts that change -- which templates exist, which model names are live, which nodes are available. Those rot, and a user who installed in spring is then following guidance written in winter.
@@ -58,6 +61,8 @@ Write commands in two layers:
 2. **Live specifics** (never freeze): tell the agent to *discover* current options at run time via the tools, rather than listing them inline. For example, use `search_templates` with the `tag` filter, or `search_nodes` with its typed `output_type` / `category` params, instead of pasting today's template names or node lists into the command.
 
 If you find yourself writing a literal model name, template name, or node id into a command, stop and point the agent at the tool that returns the current set instead. That keeps the command correct as the catalog moves, and it keeps the agent from going off on a tangent before it engages the right tool.
+
+- **Build steps must leave the user a canvas-readable artifact: titled nodes + a saved workflow link.** Any step that has the agent build a workflow JSON tells it to give every node a `_meta.title` naming its role, and, when the user asked for a workflow rather than just an output, to `save_workflow` it and return the `get_workflow_canvas_url` link.
 
 ## Contributing
 
