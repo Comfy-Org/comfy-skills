@@ -21,7 +21,9 @@ The **`comfy-cloud`** plugin bundles the Comfy Cloud MCP connection **and** Agen
 
 Then run `/mcp` to sign in (OAuth). That's it — the plugin registers the hosted MCP server (`https://cloud.comfy.org/mcp`) and adds the skills.
 
-In chat and Cowork, install the plugin and sign in from its Connectors tab. The connector URL is the same hosted server. Skills are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/comfy-cloud:search-models`, `/comfy-cloud:help`. Asking in plain language loads the matching skill.
+In chat and Cowork, open Customize, then the Plugins tab (in Cowork, open the Cowork tab first). Select Add, then Add marketplace, choose Add from a repository, and enter `Comfy-Org/comfy-skills`. Open Discover, select `comfy-cloud`, and click Add. Then sign in from the plugin's Connectors tab. Plugins need a paid Claude plan, and a Team or Enterprise admin may limit which marketplaces can be added.
+
+The connector URL is the same hosted server. Skills are namespaced under the plugin, e.g. `/comfy-cloud:generate-image`, `/comfy-cloud:search-models`, `/comfy-cloud:help`. Asking in plain language loads the matching skill.
 
 Full per-client setup, including adding the server without the plugin, lives in the docs: **https://docs.comfy.org/cloud/mcp**
 

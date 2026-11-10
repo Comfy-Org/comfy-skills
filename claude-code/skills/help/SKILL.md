@@ -16,7 +16,7 @@ Say this briefly, in their words:
 - Remove a background, or upscale an image they attach.
 - Search models, nodes, and workflow templates, then run a template or build a graph.
 - Keep a character consistent across shots by loading the live technique from the server.
-- Refine a previous result without rebuilding it: rerun that job with only the inputs that changed.
+- Refine a previous result without rebuilding it: rerun a workflow job with only the inputs that changed. A partner-model result has no workflow to rerun, so it is generated again with the changed settings. To edit the exact image or clip they got, use that output as the new input.
 - Cancel a job or check the queue when they change their mind.
 
 Catalog search does not spend generation credits. Running a generation needs an active Comfy Cloud subscription. Offer `get_billing_status` when they ask what a run will cost or why a run was refused.

@@ -11,7 +11,7 @@ Install the plugin from the Claude plugin directory, or from the Comfy Skills ma
 /plugin install comfy-cloud --marketplace Comfy-Org/comfy-skills
 ```
 
-The second line is the one-step install on Claude Code 2.1.275 or later. In chat and Cowork, open the plugin's Connectors tab and sign in to Comfy Cloud. In Claude Code, run `/mcp` and authenticate the `comfy-cloud` server. Then ask in plain language: generate an image, extend a video, clone a voice, upscale a photo, remove a background, or find a template. You can also invoke a skill by name, such as `/comfy-cloud:generate-image`.
+The second line is the one-step install on Claude Code 2.1.275 or later. In chat and Cowork, until the plugin is in the directory, add the marketplace from Customize, Plugins, Add, Add marketplace, Add from a repository (`Comfy-Org/comfy-skills`), then add `comfy-cloud` from Discover. Open the plugin's Connectors tab and sign in to Comfy Cloud. In Claude Code, run `/mcp` and authenticate the `comfy-cloud` server. Then ask in plain language: generate an image, extend a video, clone a voice, upscale a photo, remove a background, or find a template. You can also invoke a skill by name, such as `/comfy-cloud:generate-image`.
 
 Sign in with the connector's OAuth flow. A chat does not need an API key, and it does not need a local ComfyUI install. Generation uses your Comfy Cloud subscription. Catalog search does not spend generation credits.
 
