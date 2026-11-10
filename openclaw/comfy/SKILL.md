@@ -94,8 +94,9 @@ with `save_workflow` (`overwrite: false`; new name on collision) after the
 run, then hand them the link from `get_workflow_canvas_url` using the
 `workflow_id` from the save result (from `list_saved_workflows` if the result
 omits it — never the filename, which publishes a public snapshot); on a
-`run_template` route, `get_template` and save that body. Mention the saved
-layout is auto-generated and may need tidying.
+`run_template` route, `get_template`, apply the run's `input_overrides` to
+that body and save the result, so the canvas matches the run. Mention the
+saved layout is auto-generated and may need tidying.
 
 **Editing an existing image**: `upload_file` first, then reference the
 uploaded file from a LoadImage node (or pass it to `partner_generate` for
