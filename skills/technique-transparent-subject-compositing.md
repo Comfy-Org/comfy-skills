@@ -192,7 +192,7 @@ If a downstream step needs the character as a standalone RGBA layer instead of a
 
 ## Step 5: Hand the composite to the video model
 
-The composited frame is a normal image, so it feeds any image-conditioned video node — for the Seedance case, `ByteDance2ReferenceNode` (reference-to-video) or `ByteDance2FirstLastFrameNode` (first-frame). These gate their inputs behind a dynamic `model` combo, so call `get_node` for the exact slot names before wiring, and confirm the current class with `search_nodes` (`category: "partner/video"`).
+The composited frame is a normal image, so it feeds any image-conditioned video node — for the Seedance case, `ByteDance2ReferenceNodeV2` (reference-to-video) or `ByteDance2FirstLastFrameNode` (first-frame). These gate their inputs behind a dynamic `model` combo, so call `get_node` for the exact slot names before wiring, and confirm the current class with `search_nodes` (`category: "partner/video"`).
 
 Save the background plate, the tight mask, **and the original Step 1 image** alongside the composite. Step 4 consumes all three — the original is the composite *source*, not just the segmentation input — so dropping it means a full rebuild rather than a re-run. With all three kept, regenerating a different opacity or re-cutting the composite for another shot is a Step 4 re-run.
 
