@@ -9,6 +9,7 @@ Explain in a friendly, concise way:
 - Search for models (checkpoints, LoRAs, VAEs, upscalers) available on Comfy Cloud
 - Search for ComfyUI nodes to discover processing capabilities
 - Build and run complex multi-step workflows (img2img, upscaling, style transfer)
+- Refine a previous result without rebuilding it (rerun with changed inputs)
 - Cancel running or queued jobs if you change your mind
 - Check queue status to see how busy the system is
 

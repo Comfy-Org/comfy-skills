@@ -26,4 +26,6 @@ Follow these steps exactly:
 
 10. If the user asked to BUILD or CREATE a workflow (not just for an output), after the run completes call `save_workflow` with the same JSON and a descriptive `name`, then `get_workflow_canvas_url` with the returned workflow id, and give the user that link. Mention that the saved layout is auto-generated and may need tidying. If you ran a subgraph template instead, tell the user the canvas shows one collapsed subgraph node and how to open it (double-click the node body, not its title, to step inside it, or right-click it and choose Unpack Subgraph to flatten it onto the canvas).
 
+11. **If the user asks for a different strength/model** (e.g. a different upscaler model or scale factor), rerun via `submit_workflow` with `from_prompt_id` set to the prompt_id of the run being adjusted and `input_overrides` holding ONLY the changed inputs ({nodeId: {inputName: value}}); do not re-upload the source and do not rebuild the workflow. If you do not know the node id, call `get_job_status` with `include_workflow: true` on that prompt_id first. Then continue from step 7.
+
 If any step fails, show the error clearly. Common issues: input image too large for GPU memory (suggest downscaling first or using a tile-based upscaler like UltimateSDUpscale).
