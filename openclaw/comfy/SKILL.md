@@ -95,7 +95,9 @@ run, then hand them the link from `get_workflow_canvas_url` using the
 `workflow_id` from the save result (from `list_saved_workflows` if the result
 omits it — never the filename, which publishes a public snapshot); on a
 `run_template` route, `get_template`, apply the run's `input_overrides` to
-that body and save the result, so the canvas matches the run. Mention the
+that body and save the result, so the canvas matches the run; after any
+`from_prompt_id` reruns, layer each rerun's `input_overrides` on top in run
+order before saving, so the canvas matches the latest run. Mention the
 saved layout is auto-generated and may need tidying.
 
 **Editing an existing image**: `upload_file` first, then reference the
