@@ -24,7 +24,7 @@ Call `get_node({ names: [...] })` first and copy the exact slot names it returns
   "prompt": "Image 1 is MIRA ... Image 2 is BRAM ..." } }
 ```
 
-With `run_template`, address the slot by the same dotted path in `input_overrides`. With `partner_generate`, each reference is its own `medias[]` item with its role (see the partner playbook).
+With `run_template`, the auto-grow slots are IMAGE links fed by the template's own `LoadImage` nodes, so override those loaders, not the slot: list the template's `io.inputs` (`search_templates` with `detail: "full"`, or `get_template_schema`) and set each loader's `image` widget to an uploaded filename, e.g. `input_overrides: { "16": { "image": "mira_ref.png" } }`. A dotted key such as `model.images.image_1` is rejected or leaves an invalid IMAGE input. If the cast needs more references than the template has `LoadImage` nodes, `get_template` it, add one `LoadImage` per extra reference wired to the next free `model.images.image_N` slot (as in the JSON above), and run it with `submit_workflow`. With `partner_generate`, each reference is its own `medias[]` item with its role (see the partner playbook).
 
 ## Step 3: Name every slot and state the exact count
 
@@ -43,7 +43,7 @@ Feed ALL characters' references into one node, one slot each, with the Step 3 pr
 
 ## Step 5: Shot-to-shot consistency
 
-Reuse the SAME reference files for every shot. Never use the previous shot's output as the character reference (drift compounds); use it only as a scene/lighting reference in an extra slot if the node allows. Keep `seed` fixed per character across shots where the node exposes one, and vary only the shot description. Chain with `use_previous_output` or re-upload.
+Reuse the SAME reference files for every shot. Never use the previous shot's output as the character reference (drift compounds); use it only as a scene/lighting reference in an extra slot if the node allows. Keep `seed` fixed per character across shots where the node exposes one, and vary only the shot description. When you do pass the previous shot into that scene/lighting slot, chain it with `use_previous_output` (or re-upload its file) — into that slot only; the character slots keep the Step 1 reference files.
 
 ## Step 6: Video shots
 
@@ -51,7 +51,7 @@ For motion, use a template from `search_templates({ query: "reference to video" 
 
 ## Step 7: Variations and iteration
 
-Submit 2-3 seeds per shot in parallel, show the results, and ask which to keep. Regenerate only the shots that drifted, with the same references and a tightened Step 3 prompt.
+Tell the user the total first (shots x seeds, default 2 seeds per shot, at most 3) and submit them as ONE `submit_batch` so a single confirmation covers the whole fan-out (a batch holds at most 50 items; above that, split across several `submit_batch` calls and state each batch's total); do not batch a run that needs another run's output (the Step 4 split pass). Show the results and ask which to keep. Regenerate only the shots that drifted, with the same references and a tightened Step 3 prompt.
 
 ## Key learnings:
 
