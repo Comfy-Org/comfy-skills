@@ -2,7 +2,7 @@
   "name": "comfy-cloud",
   "displayName": "Comfy Cloud",
   "description": "Generate and edit images, video, audio, and 3D on Comfy Cloud from chat, Cowork, or Claude Code. Bundles Agent Skills plus the hosted Comfy Cloud connector.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "license": "MIT",
   "author": {
     "name": "Comfy Org",
@@ -12,6 +12,18 @@
   "icon": "./icon.png",
   "documentationUrl": "https://docs.comfy.org/cloud/mcp",
   "privacyPolicyUrl": "https://comfy.org/privacy",
+  "termsOfServiceUrl": "https://comfy.org/terms-of-service/",
+  "supportUrl": "mailto:support@comfy.org",
+  "repository": "https://github.com/Comfy-Org/comfy-skills",
+  "keywords": [
+    "comfyui",
+    "comfy-cloud",
+    "image-generation",
+    "video-generation",
+    "audio-generation",
+    "3d-generation",
+    "workflows"
+  ],
   "mcpServers": {
     "comfy-cloud": {
       "type": "http",
