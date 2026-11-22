@@ -1,0 +1,78 @@
+name: CI - Cursor Review
+
+# Thin caller for the shared reusable cursor-review workflow in
+# Comfy-Org/github-workflows — the review logic (panel matrix, judge
+# consolidation, prompts, extract/post/notify scripts) lives there as the
+# single source of truth. This repo carries only its own diff excludes.
+#
+# WHY THIS FILE IS BEING ADDED. The `cursor-review` label already exists in this
+# repo and maintainers have been applying it: six open PRs carry it today, four
+# of them from 2026-11-11, and #29 was labeled on 2026-11-19. There was no
+# caller here for any of them to trigger, and nothing removes the label or says
+# so, so each of those asks for a review panel went nowhere silently. The label
+# is the whole interface, which means a dropped request and a running one look
+# identical from the applier's side.
+#
+# Advisory, not blocking: the label-only `types: [labeled, unlabeled]` pair is
+# the shape the reusable documents for a non-blocking caller, and no "Blocking
+# gate" check is requested, so nothing new can hold a merge.
+#
+# Needs CURSOR_API_KEY to post a review; without it the run degrades to a job
+# summary and posts nothing. No lane repo carries that key as a REPO secret
+# (checked 2026-11-22) while the panel does run in comfy-mcp, comfy-cli and
+# comfy-cloud-mcp-server, so it is supplied at the organisation level; whether
+# this repo is inside that org secret's repository list is the one thing that
+# cannot be read without org-admin scope. The first labeled PR after this merges
+# settles it. SLACK_BOT_TOKEN is optional and absent here, so the start/complete
+# DMs to the triggerer are simply skipped.
+
+on:
+  pull_request:
+    types: [labeled, unlabeled]
+
+# Cancel an earlier in-flight review for the same PR when the label is removed
+# or re-applied. PR number only: `github.event.label.name` is empty on widened
+# events, so keying on it would split one PR across groups that cannot cancel
+# each other.
+concurrency:
+  group: cursor-review-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  cursor-review:
+    # Scope the GITHUB_TOKEN to this job; the reusable workflow restricts
+    # further per job — only its post-review job uses pull-requests: write, and
+    # it checks out no PR code.
+    permissions:
+      contents: read
+      pull-requests: write
+    # SHA-pinned, matching the newest caller in this org's MCP repos
+    # (comfy-cloud-mcp-server). Bump this SHA to pick up upstream changes and
+    # keep workflows_ref identical, or the workflow is pinned while its scripts
+    # are not — the reusable checks the two against each other and fails on a
+    # mismatch.
+    uses: Comfy-Org/github-workflows/.github/workflows/cursor-review.yml@49c752aed37349ef89d1d5e8c85b367733141e86 # github-workflows main (49c752a)
+    with:
+      workflows_ref: 49c752aed37349ef89d1d5e8c85b367733141e86
+      # This repo is prose skills, plugin manifests and a few fixtures, so the
+      # only paths worth excluding are vendored/generated ones and the binary
+      # assets a reviewer cannot read. Setting this REPLACES the reusable's
+      # default list, so the defaults are restated first.
+      diff_excludes: >-
+        :!**/package-lock.json
+        :!**/yarn.lock
+        :!**/pnpm-lock.yaml
+        :!**/node_modules/**
+        :!**/.claude/**
+        :!**/dist/**
+        :!**/vendor/**
+        :!**/*.generated.*
+        :!**/*.min.js
+        :!**/*.min.css
+        :!**/uv.lock
+        :!assets/**
+    secrets:
+      CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+      # Optional — enables start/complete Slack DMs to the triggerer. Not set
+      # in this repo today, which only means those DMs are skipped.
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
