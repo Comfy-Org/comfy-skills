@@ -47,7 +47,7 @@ Reuse the SAME reference files for every shot. Never use the previous shot's out
 
 ## Step 6: Video shots
 
-For motion, use a template from `search_templates({ query: "reference to video" })` (at time of writing: Seedance 2.5 up to 20 images, MiniMax H3 up to 9, HappyHorse up to 9, Wan3.0 two images, Gemini Omni 1.1 Flash). Wire references per Step 2 and prompt per Step 3. For a locked character performing a given motion, use a character-replacement / motion-control template (SCAIL-2, Kling Motion Control, Wan Animate 2) with one character per run.
+For motion, use a template from `search_templates({ query: "reference to video" })` (at time of writing: Seedance 2.5 up to 20 images, MiniMax H3 up to 9, HappyHorse up to 9, Wan3.0 two images, Gemini Omni Flash — use its newest generation). Wire references per Step 2 and prompt per Step 3. For a locked character performing a given motion, use a character-replacement / motion-control template (SCAIL-2, Kling Motion Control, Wan Animate 2) with one character per run.
 
 ## Step 7: Variations and iteration
 
